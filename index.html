@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, minimum-scale=0.5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Brainwave - Visual Mind Mapper</title>
 
   <meta name="description" content="Organize your ideas with a powerful and intuitive mind mapping tool. Create, link, and customize nodes with titles, descriptions, and colors." />
@@ -13,10 +16,29 @@
   <meta name="twitter:description" content="Organize your ideas with a powerful and intuitive mind mapping tool. Create, link, and customize nodes with titles, descriptions, and colors." />
 
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/responsive.css">
 </head>
 <body>
+  <!-- ===== Mobile Hamburger Menu Button ===== -->
+  <button id="mobileMenuToggle" class="mobile-menu-toggle" aria-label="Toggle menu" title="Menu">
+    <svg class="icon-menu" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+    <svg class="icon-close" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  </button>
+
+  <!-- ===== Mobile Search Bar (Visible on Mobile Only) ===== -->
+  <div class="mobile-search-bar" id="mobileSearchBar">
+    <input type="search" id="mobileSearch" placeholder="Search by name..." autocapitalize="none" autocomplete="off" spellcheck="false" />
+  </div>
+
   <!-- ===== Toolbar ===== -->
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
     <div class="group">
       <button id="addChild" class="btn-accent" title="Add a child to the selected node (A)">+ Child</button>
       <button id="editNode" title="Edit the selected node's properties (E)">Edit</button>
@@ -28,8 +50,8 @@
       <span class="badge" id="selTxt">No node selected</span>
     </div>
 
-    <div class="group">
-      <input type="search" id="search" placeholder="Search by name..." />
+    <div class="group search-group">
+      <input type="search" id="search" placeholder="Search by name..." autocapitalize="none" autocomplete="off" spellcheck="false" />
     </div>
 
     <div class="group">
@@ -94,7 +116,7 @@
       <button type="button" id="authCloseBtn" class="modal-close" aria-label="Close sign in dialog">×</button>
       <form id="authForm">
         <h3 id="authModalTitle">Sign In</h3>
-        <p id="authDescription" class="auth-description">Sign in to access your saved mind maps from Supabase.</p>
+        <p id="authDescription" class="auth-description">Sign in to access your mind maps.</p>
         <div class="form-group">
           <label for="authEmailInput">Email</label>
           <input type="email" id="authEmailInput" autocomplete="email" required>
@@ -106,7 +128,7 @@
         <p id="authErrorMsg" class="auth-error" role="alert"></p>
         <div class="auth-actions">
           <button type="submit" id="authSubmitBtn" class="btn btn-accent auth-submit">Sign In</button>
-          <button type="button" id="authToggleMode" class="btn-link auth-toggle">Need an account? Create one</button>
+          <!--<button type="button" id="authToggleMode" class="btn-link auth-toggle">Need an account? Create one</button>-->
         </div>
       </form>
     </div>

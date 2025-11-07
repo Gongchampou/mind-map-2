@@ -1,0 +1,701 @@
+/* ========================================
+   RESPONSIVE DESIGN - MOBILE, TABLET, DESKTOP
+   ========================================
+   
+   This file contains all responsive styles for the mind map application.
+   Breakpoints:
+   - Mobile: 0px to 767px
+   - Tablet: 768px to 1023px
+   - Desktop: 1024px and above
+   
+   Edit the breakpoint values below if you need to adjust device categories.
+   ======================================== */
+
+/* ========================================
+   MOBILE STYLES (0px - 767px)
+   ======================================== */
+@media (max-width: 767px) {
+  
+  /* --- Mobile Hamburger Menu Button --- */
+  .mobile-menu-toggle {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 100;
+    width: 44px;
+    height: 44px;
+    background: var(--toolbar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px);
+    transition: all 0.3s ease;
+    padding: 0;
+  }
+  
+  .mobile-menu-toggle:hover {
+    background: rgba(124,92,255,.15);
+    border-color: var(--accent);
+    transform: scale(1.05);
+  }
+  
+  .mobile-menu-toggle:active {
+    transform: scale(0.95);
+  }
+  
+  .mobile-menu-toggle svg {
+    width: 24px;
+    height: 24px;
+    color: var(--ink);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  /* Show hamburger icon, hide close icon by default */
+  .mobile-menu-toggle .icon-menu {
+    display: block;
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+  
+  .mobile-menu-toggle .icon-close {
+    display: none;
+    opacity: 0;
+    transform: rotate(90deg);
+    position: absolute;
+  }
+  
+  /* When menu is active, show close icon, hide hamburger */
+  .mobile-menu-toggle.active .icon-menu {
+    display: none;
+    opacity: 0;
+    transform: rotate(-90deg);
+  }
+  
+  .mobile-menu-toggle.active .icon-close {
+    display: block;
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+
+  /* --- Mobile Search Bar Placement --- */
+  .mobile-search-bar {
+    display: block;
+    position: fixed;
+    top: 12px;
+    left: 64px;
+    right: 12px;
+    z-index: 95;
+  }
+
+  .mobile-search-bar input {
+    font-size: 16px; /* Prevent zoom on iOS */
+    min-height: 44px;
+  }
+  
+  /* --- Toolbar Mobile Layout (Hidden by default) --- */
+  .toolbar {
+    /* Hidden by default on mobile, shown when menu is open */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 100vh;
+    padding: 110px 16px 16px;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    /* Stack toolbar items vertically */
+    flex-direction: column;
+    align-items: stretch;
+    overflow-y: auto;
+    /* Smooth scrolling for mobile */
+    -webkit-overflow-scrolling: touch;
+    /* Hide by default */
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+    /* Ensure menu is above canvas but below modals */
+    z-index: 50;
+  }
+  
+  /* --- Toolbar When Menu is Open --- */
+  .toolbar.mobile-menu-open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Add overlay background when menu is open */
+  body.mobile-menu-active::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 45;
+    animation: fadeIn 0.3s ease;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  /* --- Toolbar Groups Mobile --- */
+  .toolbar .group {
+    /* Remove border separators on mobile for cleaner look */
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding-right: 0;
+    padding-bottom: 10px;
+    margin-right: 0;
+    margin-bottom: 10px;
+    /* Stack items horizontally within each group */
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  
+  .toolbar .group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  
+  /* Full width buttons in mobile menu for easier tapping */
+  .toolbar.mobile-menu-open .group button,
+  .toolbar.mobile-menu-open .group .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Search input full width in mobile menu */
+  .toolbar.mobile-menu-open #search {
+    width: 100%;
+  }
+
+  /* Hide desktop search group inside toolbar on mobile */
+  .toolbar .search-group {
+    display: none;
+  }
+  
+  /* --- Buttons Mobile --- */
+  button, .btn {
+    /* Larger touch targets for mobile (minimum 44x44px recommended) */
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 13px;
+    /* Reduce letter spacing for better mobile readability */
+    letter-spacing: 0.1px;
+  }
+  
+  /* Icon buttons on mobile */
+  .btn-icon, #lockNodeBtn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+  }
+  
+  /* --- Search Input Mobile --- */
+  #search {
+    min-width: 100%;
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 10px 14px;
+  }
+  
+  /* --- Badge Mobile --- */
+  .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    /* Make badge more compact on mobile */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  
+  /* --- Auth Group Mobile --- */
+  .auth-group {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .auth-group button {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  /* --- Nodes Mobile --- */
+  .node {
+    /* Smaller nodes on mobile for better visibility */
+    width: 200px;
+    padding: 10px;
+    font-size: 13px;
+    /* Reduce shadow for better performance on mobile */
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+  }
+  
+  .node .title {
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+  
+  .node .description {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  
+  .node .meta {
+    font-size: 11px;
+    margin-top: 8px;
+    padding-top: 6px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .node .chip {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+  
+  /* --- Node Collapse Toggle Mobile --- */
+  .node-collapse-toggle {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    right: -12px;
+  }
+  
+  /* --- Modal Mobile --- */
+  .modal-content {
+    width: 95%;
+    max-width: none;
+    padding: 20px 16px;
+    border-radius: 12px;
+    margin: 10px;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+    /* Smooth scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .auth-modal-content {
+    padding: 24px 16px 20px;
+  }
+  
+  .modal-close {
+    top: 12px;
+    right: 14px;
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* --- Form Elements Mobile --- */
+  .form-group {
+    margin-bottom: 14px;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 14px;
+  }
+  
+  /* --- Color Palette Mobile --- */
+  .color-palette {
+    gap: 6px;
+  }
+  
+  .color-swatch {
+    width: 36px;
+    height: 36px;
+  }
+  
+  /* --- Modal Actions Mobile --- */
+  .modal-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  
+  .modal-actions button {
+    width: 100%;
+  }
+  
+  /* --- Help Widget Mobile --- */
+  .help-widget {
+    right: 8px;
+    bottom: 8px;
+  }
+  
+  .help-toggle {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .help-content {
+    width: calc(100vw - 16px);
+    max-width: 280px;
+    padding: 12px;
+    font-size: 12px;
+  }
+  
+  /* --- Canvas/Stage Mobile --- */
+  #stage {
+    /* Ensure stage takes full viewport on mobile */
+    inset: 0;
+  }
+  
+  /* --- Disable hover effects on mobile (touch devices) --- */
+  @media (hover: none) {
+    button:hover, .btn:hover {
+      border-color: rgba(124,92,255,.15);
+      background: transparent;
+    }
+    
+    .node:hover {
+      background: var(--panel);
+      border-color: var(--border-color);
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+
+/* ========================================
+   TABLET STYLES (768px - 1023px)
+   ======================================== */
+@media (min-width: 768px) and (max-width: 1023px) {
+  
+  /* --- Hide mobile-specific UI on tablet --- */
+  .mobile-menu-toggle,
+  .mobile-search-bar {
+    display: none;
+  }
+  
+  /* --- Toolbar Tablet Layout --- */
+  .toolbar {
+    inset: 12px 12px auto 12px;
+    padding: 10px;
+    border-radius: 14px;
+    /* Allow wrapping but keep horizontal layout */
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  /* --- Toolbar Groups Tablet --- */
+  .toolbar .group {
+    padding-right: 10px;
+    margin-right: 8px;
+    /* Allow groups to wrap if needed */
+    flex-wrap: wrap;
+  }
+  
+  /* --- Buttons Tablet --- */
+  button, .btn {
+    padding: 9px 13px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+  
+  .btn-icon, #lockNodeBtn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 9px;
+  }
+  
+  /* --- Search Input Tablet --- */
+  #search {
+    min-width: 200px;
+    padding: 9px 13px;
+  }
+  
+  /* --- Nodes Tablet --- */
+  .node {
+    width: 220px;
+    padding: 11px;
+    font-size: 13px;
+  }
+  
+  .node .title {
+    font-size: 14px;
+  }
+  
+  .node .description {
+    font-size: 12px;
+  }
+  
+  .node .meta {
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+  
+  /* --- Modal Tablet --- */
+  .modal-content {
+    width: 85%;
+    max-width: 520px;
+    padding: 24px 20px;
+  }
+  
+  .auth-modal-content {
+    max-width: 400px;
+    padding: 28px 24px 24px;
+  }
+  
+  /* --- Form Elements Tablet --- */
+  .form-group input,
+  .form-group textarea {
+    padding: 11px 13px;
+  }
+  
+  /* --- Color Palette Tablet --- */
+  .color-swatch {
+    width: 32px;
+    height: 32px;
+  }
+  
+  /* --- Help Widget Tablet --- */
+  .help-content {
+    width: 320px;
+    padding: 14px;
+  }
+  
+  /* --- Auth Group Tablet --- */
+  .auth-group {
+    gap: 8px;
+  }
+  
+  .auth-group button {
+    min-width: 85px;
+  }
+}
+
+/* ========================================
+   DESKTOP / LARGE SCREEN STYLES (1024px+)
+   ======================================== */
+@media (min-width: 1024px) {
+  
+  /* --- Hide mobile-specific UI on desktop --- */
+  .mobile-menu-toggle,
+  .mobile-search-bar {
+    display: none;
+  }
+  
+  /* --- Ensure toolbar is visible on desktop --- */
+  .toolbar {
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  body.mobile-menu-active::before {
+    display: none;
+  }
+  
+  /* --- Toolbar Desktop --- */
+  .toolbar {
+    /* Original desktop styles - already defined in main CSS */
+    /* These styles apply by default, so no changes needed */
+    /* Adjust if you want different desktop spacing */
+    inset: 16px 16px auto 16px;
+    padding: 10px;
+  }
+  
+  /* --- Nodes Desktop --- */
+  .node {
+    /* Original desktop node size */
+    width: 240px;
+    padding: 12px;
+  }
+  
+  /* --- Modal Desktop --- */
+  .modal-content {
+    /* Original desktop modal size */
+    max-width: 480px;
+    padding: 24px;
+  }
+  
+  .auth-modal-content {
+    max-width: 420px;
+    padding: 32px 28px 28px;
+  }
+  
+  /* --- Larger screens (1440px+) optimizations --- */
+  @media (min-width: 1440px) {
+    .toolbar {
+      /* More spacing on very large screens */
+      inset: 20px 20px auto 20px;
+      padding: 12px;
+    }
+    
+    .node {
+      /* Slightly larger nodes on very large screens */
+      width: 260px;
+      padding: 14px;
+    }
+    
+    .modal-content {
+      max-width: 520px;
+      padding: 28px;
+    }
+  }
+}
+
+/* ========================================
+   ORIENTATION SPECIFIC STYLES
+   ======================================== */
+
+/* --- Landscape Mobile / Tablet --- */
+@media (max-width: 1023px) and (orientation: landscape) {
+  .toolbar {
+    /* Reduce toolbar height in landscape */
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  
+  .modal-content {
+    max-height: 90vh;
+  }
+  
+  .help-widget {
+    /* Move help widget higher in landscape */
+    bottom: 12px;
+  }
+}
+
+/* --- Portrait Mobile --- */
+@media (max-width: 767px) and (orientation: portrait) {
+  .toolbar {
+    /* Full width toolbar in portrait */
+    max-height: 60vh;
+  }
+  
+  .node {
+    /* Slightly wider nodes in portrait */
+    width: 210px;
+  }
+}
+
+/* ========================================
+   TOUCH DEVICE OPTIMIZATIONS
+   ======================================== */
+@media (hover: none) and (pointer: coarse) {
+  /* Styles for touch devices (mobile/tablet) */
+  
+  /* Larger touch targets */
+  button, .btn {
+    min-height: 44px;
+  }
+  
+  /* Prevent text selection during drag */
+  #stage {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Better touch scrolling */
+  .toolbar,
+  .modal-content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Prevent double-tap zoom on buttons */
+  button, .btn, .node {
+    touch-action: manipulation;
+  }
+}
+
+/* ========================================
+   HIGH DPI / RETINA DISPLAY OPTIMIZATIONS
+   ======================================== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Sharper borders and shadows on high DPI displays */
+  .toolbar,
+  .node,
+  .modal-content {
+    border-width: 0.5px;
+  }
+  
+  .node {
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+}
+
+/* ========================================
+   PRINT STYLES (Optional - for future use)
+   ======================================== */
+@media print {
+  .toolbar,
+  .help-widget,
+  .modal-overlay {
+    display: none !important;
+  }
+  
+  #stage {
+    position: static;
+    overflow: visible;
+  }
+  
+  .node {
+    position: static;
+    transform: none;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ======================================== */
+
+/* --- Reduced Motion (respects user preferences) --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- High Contrast Mode --- */
+@media (prefers-contrast: high) {
+  .toolbar,
+  .node,
+  .modal-content {
+    border-width: 2px;
+  }
+  
+  button, .btn {
+    border-width: 2px;
+  }
+}
+
+/* ========================================
+   END OF RESPONSIVE STYLES
+   ======================================== */
+

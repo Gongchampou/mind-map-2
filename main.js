@@ -11,6 +11,7 @@ const viewport = document.getElementById('viewport');
 const wiresSVG = document.getElementById('wires');
 const selTxt = document.getElementById('selTxt');
 const searchInput = document.getElementById('search');
+const mobileSearchInput = document.getElementById('mobileSearch');
 const modal = document.getElementById('modal');
 const modalForm = document.getElementById('modalForm');
 const modalTitle = document.getElementById('modalTitle');
@@ -26,6 +27,15 @@ const lockNodeBtn = document.getElementById('lockNodeBtn');
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const authStatus = document.getElementById('authStatus');
+const addChildBtn = document.getElementById('addChild');
+const editNodeBtn = document.getElementById('editNode');
+const deleteNodeBtn = document.getElementById('deleteNode');
+const layoutBtn = document.getElementById('layoutBtn');
+const centerBtn = document.getElementById('centerBtn');
+const resetBtn = document.getElementById('resetBtn');
+const exportBtn = document.getElementById('exportBtn');
+const importFileInput = document.getElementById('file');
+const importLabel = importFileInput?.parentElement;
 const authModal = document.getElementById('authModal');
 const authForm = document.getElementById('authForm');
 const authModalTitle = document.getElementById('authModalTitle');
@@ -36,6 +46,8 @@ const authSubmitBtn = document.getElementById('authSubmitBtn');
 const authToggleMode = document.getElementById('authToggleMode');
 const authErrorMsg = document.getElementById('authErrorMsg');
 const authCloseBtn = document.getElementById('authCloseBtn');
+const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+const toolbar = document.getElementById('toolbar');
 
 // ----- Constants -----
 const SAVE_KEY = 'brainwave-mindmap-v2'; // Incremented version for new features
@@ -61,6 +73,7 @@ const state = {
   remoteSaveTimer: null,
   authMode: 'signin',
   isAuthProcessing: false,
+  searchTerm: '',
   dragState: {
     isPanning: false,
     isDraggingNode: false,
@@ -96,7 +109,10 @@ function applyPersistedState(obj) {
 }
 
 function getLocalSaveKey(userId = state.currentUserId) {
-  return userId ? `${SAVE_KEY}:${userId}` : SAVE_KEY;
+  if (userId) {
+    return `${SAVE_KEY}:user:${userId}`;
+  }
+  return `${SAVE_KEY}:guest`;
 }
 
 function saveLocal(payload) {
@@ -204,14 +220,20 @@ async function handleSessionChange(session) {
   }
   state.pendingSavePayload = null;
 
-  if (previousUserId && previousUserId !== state.currentUserId) {
-    // Clear local cache for previous user to avoid leakage
-    localStorage.removeItem(getLocalSaveKey(previousUserId));
+  // Clear previous user's data to ensure isolation
+  if (previousUserId !== state.currentUserId) {
+    if (previousUserId) {
+      localStorage.removeItem(getLocalSaveKey(previousUserId));
+    } else {
+      // Clear guest data when signing in
+      localStorage.removeItem(getLocalSaveKey(null));
+    }
   }
 
   updateAuthUI();
 
   if (state.currentUserId) {
+    // Signed in: load user's data from Supabase
     const loadedLocal = loadLocal();
     if (state.nodes.length === 0) {
       createRootIfNeeded();
@@ -225,12 +247,17 @@ async function handleSessionChange(session) {
       console.error('Error loading Supabase data', err);
     }
   } else {
+    // Guest mode: clear all signed-in data and start fresh
     state.nodes = [];
     state.nextId = 1;
     state.pan = { x: 0, y: 0 };
     state.scale = 1;
     state.selectedId = null;
-    createRootIfNeeded();
+    // Load guest-only data
+    const guestData = loadLocal();
+    if (!guestData || state.nodes.length === 0) {
+      createRootIfNeeded();
+    }
     centerView();
   }
 
@@ -240,7 +267,11 @@ async function handleSessionChange(session) {
 
 function updateAuthUI() {
   if (!loginBtn || !logoutBtn || !authStatus) return;
-  if (state.currentUserId) {
+  
+  const isSignedIn = !!state.currentUserId;
+  
+  // Auth status and buttons
+  if (isSignedIn) {
     loginBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-flex';
     authStatus.textContent = state.session?.user?.email || 'Signed in';
@@ -250,6 +281,29 @@ function updateAuthUI() {
     logoutBtn.style.display = 'none';
     authStatus.textContent = 'Guest mode';
     authStatus.classList.remove('badge-success');
+  }
+  
+  // Node manipulation buttons (hidden in guest mode)
+  if (addChildBtn) addChildBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
+  if (editNodeBtn) editNodeBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
+  if (lockNodeBtn) lockNodeBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
+  if (deleteNodeBtn) deleteNodeBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
+  
+  // Layout buttons (hidden in guest mode, except center/reset which are navigation only)
+  if (layoutBtn) layoutBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
+  if (centerBtn) centerBtn.style.display = 'inline-flex'; // Always visible
+  if (resetBtn) resetBtn.style.display = 'inline-flex'; // Always visible
+  
+  // File operations (hidden in guest mode)
+  if (exportBtn) exportBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
+  if (importLabel) importLabel.style.display = isSignedIn ? 'inline-flex' : 'none';
+  
+  // Search and theme toggle (always visible)
+  // These are already visible by default, no change needed
+  
+  // Clear selection in guest mode since editing is disabled
+  if (!isSignedIn && state.selectedId) {
+    selectNode(null);
   }
 }
 
@@ -281,6 +335,10 @@ function updateAuthModal() {
 
 function openAuthModal(mode = 'signin') {
   if (!authModal) return;
+  // Close mobile menu if open when opening auth modal
+  if (window.innerWidth <= 767) {
+    closeMobileMenu();
+  }
   state.authMode = mode;
   updateAuthModal();
   if (authForm) authForm.reset();
@@ -435,12 +493,21 @@ function render() {
             nodeElements.set(n.id, el);
         }
 
+        const isGuestMode = !state.currentUserId;
         el.className = `node color-${n.color || 9}` 
             + (state.selectedId === n.id ? ' selected' : '')
-            + (n.locked ? ' locked' : '');
+            + (n.locked ? ' locked' : '')
+            + (isGuestMode ? ' guest-readonly' : '');
 
         el.style.left = `${n.x}px`;
         el.style.top = `${n.y}px`;
+        
+        // Disable cursor grab in guest mode
+        if (isGuestMode) {
+            el.style.cursor = 'default';
+        } else {
+            el.style.cursor = '';
+        }
 
         const hasChildren = childrenOf(n.id).length > 0;
         const isCollapsed = n.collapsed;
@@ -454,7 +521,7 @@ function render() {
             <span class="chip">${childrenOf(n.id).length} children</span>
             <span class="chip">ID: ${n.id}</span>
           </div>
-          ${hasChildren ? `<div class="node-collapse-toggle" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '+' : '−'}</div>` : ''}
+          ${hasChildren && state.currentUserId ? `<div class="node-collapse-toggle" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '+' : '−'}</div>` : ''}
         `;
     });
 
@@ -470,6 +537,7 @@ function render() {
     renderWires(visibleNodes);
     updateSelText();
     updateButtonStates();
+    highlightSearchResults(state.searchTerm || '', { focusOnFirst: false });
 }
 
 function renderWires(visibleNodes) {
@@ -575,6 +643,7 @@ function toggleNodeCollapse(nodeId) {
 }
 
 function toggleLockSelected() {
+    if (!state.currentUserId) return;
     const node = byId(state.selectedId);
     if (node) {
         node.locked = !node.locked;
@@ -585,6 +654,11 @@ function toggleLockSelected() {
 
 // ----- Modal & Form Logic -----
 function openModal({ isNew = false, parentId = null } = {}) {
+  if (!state.currentUserId) return;
+  // Close mobile menu if open when opening modal
+  if (window.innerWidth <= 767) {
+    closeMobileMenu();
+  }
   state.editingNodeId = isNew ? null : state.selectedId;
   modalTitle.textContent = isNew ? 'Add Child Node' : 'Edit Node';
 
@@ -668,10 +742,17 @@ modalForm.addEventListener('submit', (e) => {
 });
 
 // ----- Commands & Layout -----
-const addChild = () => openModal({ isNew: true, parentId: state.selectedId || 'root' });
-const editSelected = () => { if (state.selectedId) openModal(); };
+const addChild = () => {
+  if (!state.currentUserId) return;
+  openModal({ isNew: true, parentId: state.selectedId || 'root' });
+};
+const editSelected = () => {
+  if (!state.currentUserId || !state.selectedId) return;
+  openModal();
+};
 
 function deleteSelected() {
+  if (!state.currentUserId) return;
   const id = state.selectedId;
   const node = byId(id);
   if (!node || node.id === 'root' || node.locked) {
@@ -689,6 +770,7 @@ function deleteSelected() {
 }
 
 function treeLayout() {
+    if (!state.currentUserId) return;
     const root = byId('root');
     if (!root) return;
     
@@ -749,6 +831,7 @@ function resetZoom() { state.scale = 1; state.pan = { x: 0, y: 0 }; setTransform
 
 // ----- Export / Import -----
 function exportJSON() {
+  if (!state.currentUserId) return;
   const nodesToExport = state.nodes.map(({ width, height, ...rest }) => rest);
   const payload = {
     nodes: nodesToExport,
@@ -771,6 +854,7 @@ function handlePointerDown(e) {
     if (modal.style.display !== 'none') return;
 
     if (target.classList.contains('node-collapse-toggle')) {
+        if (!state.currentUserId) return;
         toggleNodeCollapse(target.closest('.node').dataset.id);
         return;
     }
@@ -778,6 +862,8 @@ function handlePointerDown(e) {
   const nodeElement = target.closest('.node');
   if (nodeElement) {
     const node = byId(nodeElement.dataset.id);
+    // In guest mode, only allow viewing (no selection or dragging)
+    if (!state.currentUserId) return;
     selectNode(node.id); // Allow selection regardless of lock state
     if (node.locked || e.button !== 0) return; // Prevent drag if locked
 
@@ -909,6 +995,10 @@ document.getElementById('centerBtn').onclick = centerView;
 document.getElementById('resetBtn').onclick = resetZoom;
 document.getElementById('exportBtn').onclick = exportJSON;
 document.getElementById('file').addEventListener('change', (e) => {
+  if (!state.currentUserId) {
+    e.target.value = '';
+    return;
+  }
   const f = e.target.files[0]; if (!f) return;
   const reader = new FileReader();
   reader.onload = () => {
@@ -955,28 +1045,50 @@ authModal?.addEventListener('click', (e) => {
 });
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.trim().toLowerCase();
-    const matches = [];
-    document.querySelectorAll('.node').forEach(el => {
-        const node = byId(el.dataset.id);
-        if (node) {
-            const isMatch = term && node.title.toLowerCase().includes(term);
-            el.classList.toggle('highlight', isMatch);
-            if (isMatch) matches.push(node);
-        }
-    });
 
-    if (!term) return;
+function highlightSearchResults(term, { focusOnFirst = false } = {}) {
+  const normalized = term.trim().toLowerCase();
+  const matches = [];
 
-    const targetNode = matches.find(n => n.id === state.selectedId) || matches[0];
-    if (!targetNode) return;
-
-    focusOnNode(targetNode);
-    if (targetNode.id !== state.selectedId) {
-        selectNode(targetNode.id);
+  document.querySelectorAll('.node').forEach(el => {
+    const node = byId(el.dataset.id);
+    if (!node) return;
+    const isMatch = normalized && node.title && node.title.toLowerCase().includes(normalized);
+    el.classList.toggle('highlight', !!isMatch);
+    if (isMatch) {
+      matches.push(node);
     }
-});
+  });
+
+  if (!focusOnFirst || !normalized || matches.length === 0) {
+    return;
+  }
+
+  const targetNode = matches.find(n => n.id === state.selectedId) || matches[0];
+  if (!targetNode) return;
+
+  focusOnNode(targetNode);
+  if (targetNode.id !== state.selectedId) {
+    selectNode(targetNode.id);
+  }
+}
+
+function handleSearchInputChange(e) {
+  const term = e.target.value ?? '';
+  state.searchTerm = term;
+
+  if (searchInput && e.target !== searchInput && searchInput.value !== term) {
+    searchInput.value = term;
+  }
+  if (mobileSearchInput && e.target !== mobileSearchInput && mobileSearchInput.value !== term) {
+    mobileSearchInput.value = term;
+  }
+
+  highlightSearchResults(term, { focusOnFirst: true });
+}
+
+searchInput?.addEventListener('input', handleSearchInputChange);
+mobileSearchInput?.addEventListener('input', handleSearchInputChange);
 
 viewport.addEventListener('mouseover', (e) => {
     const nodeElement = e.target.closest('.node');
@@ -1042,9 +1154,16 @@ viewport.addEventListener('mouseout', (e) => {
 });
 
 window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && authModal && authModal.style.display !== 'none') {
-        closeAuthModal();
-        return;
+    // Priority: Auth modal > Mobile menu > Other shortcuts
+    if (e.key === 'Escape') {
+        if (authModal && authModal.style.display !== 'none') {
+            closeAuthModal();
+            return;
+        }
+        if (toolbar && toolbar.classList.contains('mobile-menu-open')) {
+            closeMobileMenu();
+            return;
+        }
     }
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
@@ -1052,6 +1171,61 @@ window.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'a' || e.key === '+') { e.preventDefault(); addChild(); }
     if (e.key.toLowerCase() === 'l') { e.preventDefault(); toggleLockSelected(); }
 });
+
+function toggleMobileMenu() {
+  if (!toolbar || !mobileMenuToggle) return;
+  toolbar.classList.toggle('mobile-menu-open');
+  mobileMenuToggle.classList.toggle('active');
+  document.body.classList.toggle('mobile-menu-active');
+}
+
+function closeMobileMenu() {
+  if (!toolbar || !mobileMenuToggle) return;
+  toolbar.classList.remove('mobile-menu-open');
+  mobileMenuToggle.classList.remove('active');
+  document.body.classList.remove('mobile-menu-active');
+}
+
+function setupMobileMenu() {
+  if (!mobileMenuToggle || !toolbar) return;
+  
+  // Toggle menu on button click
+  mobileMenuToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMobileMenu();
+  });
+  
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (toolbar.classList.contains('mobile-menu-open')) {
+      if (!toolbar.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+        closeMobileMenu();
+      }
+    }
+  });
+  
+  // Escape key is handled in the main keydown handler above
+  
+  // Close menu when window is resized to desktop size
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 767) {
+      closeMobileMenu();
+    }
+  });
+  
+  // Close menu when clicking on menu items (optional - for better UX)
+  toolbar.addEventListener('click', (e) => {
+    // Close menu if clicking on a button or link (but not on the toolbar itself)
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input[type="file"]')) {
+      // Small delay to allow the click to register
+      setTimeout(() => {
+        if (window.innerWidth <= 767) {
+          closeMobileMenu();
+        }
+      }, 100);
+    }
+  });
+}
 
 function init() {
   const hasLocalData = loadLocal();
@@ -1063,6 +1237,8 @@ function init() {
   render();
   centerView();
   setupHelpWidget();
+  setupMobileMenu(); // Initialize mobile menu
+  updateAuthUI(); // Set initial UI state before auth loads
   initAuth();
 }
 

@@ -57,6 +57,33 @@ body.is-panning #viewport {
   cursor: grabbing;
 }
 
+/* ===== Mobile Hamburger Menu Button (Hidden by default on desktop) ===== */
+.mobile-menu-toggle {
+  display: none; /* Hidden on desktop, shown only on mobile via responsive.css */
+}
+
+/* ===== Mobile Search Bar (Hidden by default on desktop) ===== */
+.mobile-search-bar {
+  display: none;
+}
+
+.mobile-search-bar input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--ink);
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-search-bar input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(124,92,255,0.25);
+}
+
 /* ===== Toolbar ===== */
 .toolbar{
   position:fixed; inset:16px 16px auto 16px; z-index:40;
@@ -148,6 +175,15 @@ svg#wires{
 
 .node.locked {
   cursor: default;
+}
+.node.guest-readonly {
+  cursor: default;
+  opacity: 0.85;
+}
+.node.guest-readonly:hover {
+  background: var(--panel);
+  border-color: var(--border-color);
+  transform: translate(-50%, -50%) scale(1);
 }
 .node-lock-icon {
   position: absolute;
@@ -366,8 +402,12 @@ svg#wires{
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 
-@media (max-width:700px){
+/* ===== OLD RESPONSIVE STYLES - REPLACED BY responsive.css ===== */
+/* Responsive styles have been moved to responsive.css for better organization */
+/* This media query is kept for backward compatibility but may be overridden */
+
+/* @media (max-width:700px){
   .node{ width: 200px; }
   .toolbar{ inset:10px; }
   .toolbar .group { padding-right: 8px; }
-}
+} */
