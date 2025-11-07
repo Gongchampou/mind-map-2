@@ -3,6 +3,8 @@
  * A vanilla JS application for creating, organizing, and visualizing ideas.
  */
 
+import { supabase } from './supabaseClient.js';
+
 // ----- DOM Element References -----
 const stage = document.getElementById('stage');
 const viewport = document.getElementById('viewport');
@@ -21,6 +23,19 @@ const helpWidget = document.getElementById('helpWidget');
 const helpToggleBtn = document.getElementById('helpToggleBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const lockNodeBtn = document.getElementById('lockNodeBtn');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const authStatus = document.getElementById('authStatus');
+const authModal = document.getElementById('authModal');
+const authForm = document.getElementById('authForm');
+const authModalTitle = document.getElementById('authModalTitle');
+const authDescription = document.getElementById('authDescription');
+const authEmailInput = document.getElementById('authEmailInput');
+const authPasswordInput = document.getElementById('authPasswordInput');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authToggleMode = document.getElementById('authToggleMode');
+const authErrorMsg = document.getElementById('authErrorMsg');
+const authCloseBtn = document.getElementById('authCloseBtn');
 
 // ----- Constants -----
 const SAVE_KEY = 'brainwave-mindmap-v2'; // Incremented version for new features
@@ -29,6 +44,8 @@ const COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6'
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const DEFAULT_NODE_HEIGHT = 140;
 const NODE_VERTICAL_GAP = 60;
+const SUPABASE_TABLE = 'mindmaps';
+const REMOTE_SAVE_DEBOUNCE = 400;
 
 // ----- Application State -----
 const state = {
@@ -38,6 +55,12 @@ const state = {
   pan: { x: 0, y: 0 },
   nextId: 1,
   editingNodeId: null,
+  session: null,
+  currentUserId: null,
+  pendingSavePayload: null,
+  remoteSaveTimer: null,
+  authMode: 'signin',
+  isAuthProcessing: false,
   dragState: {
     isPanning: false,
     isDraggingNode: false,
@@ -50,36 +73,280 @@ const state = {
 };
 
 // ----- State Management & Utils -----
-function save() {
-  const payload = JSON.stringify({
+function serializeState() {
+  return {
     nodes: state.nodes.map(({ width, height, ...rest }) => rest),
     nextId: state.nextId,
     pan: state.pan,
     scale: state.scale,
     selectedId: state.selectedId,
-  });
-  localStorage.setItem(SAVE_KEY, payload);
+  };
 }
 
-function load() {
-  const txt = localStorage.getItem(SAVE_KEY);
+function applyPersistedState(obj) {
+  state.nodes = obj.nodes || [];
+  state.nodes.forEach(n => {
+    if (n.collapsed === undefined) n.collapsed = false;
+    if (n.locked === undefined) n.locked = false;
+  });
+  state.nextId = obj.nextId || 1;
+  state.pan = obj.pan || { x: 0, y: 0 };
+  state.scale = obj.scale || 1;
+  state.selectedId = obj.selectedId || null;
+}
+
+function getLocalSaveKey(userId = state.currentUserId) {
+  return userId ? `${SAVE_KEY}:${userId}` : SAVE_KEY;
+}
+
+function saveLocal(payload) {
+  try {
+    localStorage.setItem(getLocalSaveKey(), JSON.stringify(payload));
+  } catch (e) {
+    console.warn('Failed to save to localStorage', e);
+  }
+}
+
+function loadLocal() {
+  const txt = localStorage.getItem(getLocalSaveKey());
   if (!txt) return false;
   try {
     const obj = JSON.parse(txt);
-    state.nodes = obj.nodes || [];
-    // Ensure all nodes have the 'collapsed' and 'locked' property
-    state.nodes.forEach(n => {
-        if (n.collapsed === undefined) n.collapsed = false;
-        if (n.locked === undefined) n.locked = false;
-    });
-    state.nextId = obj.nextId || 1;
-    state.pan = obj.pan || { x: 0, y: 0 };
-    state.scale = obj.scale || 1;
-    state.selectedId = obj.selectedId || null;
+    applyPersistedState(obj);
     return true;
   } catch (e) {
     console.warn('Failed to load from localStorage', e);
     return false;
+  }
+}
+
+async function saveRemote(payload) {
+  if (!state.currentUserId) return;
+  const { error } = await supabase
+    .from(SUPABASE_TABLE)
+    .upsert({
+      user_id: state.currentUserId,
+      data: payload,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error('Failed to save to Supabase', error);
+  }
+}
+
+function scheduleRemoteSave(payload) {
+  if (!state.currentUserId) return;
+  state.pendingSavePayload = payload;
+  if (state.remoteSaveTimer) {
+    clearTimeout(state.remoteSaveTimer);
+  }
+  state.remoteSaveTimer = setTimeout(() => {
+    const data = state.pendingSavePayload;
+    state.remoteSaveTimer = null;
+    if (data) saveRemote(data);
+  }, REMOTE_SAVE_DEBOUNCE);
+}
+
+async function loadRemote() {
+  if (!state.currentUserId) return false;
+  const { data, error } = await supabase
+    .from(SUPABASE_TABLE)
+    .select('data')
+    .eq('user_id', state.currentUserId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to load from Supabase', error);
+    return false;
+  }
+
+  if (!data || !data.data) return false;
+
+  applyPersistedState(data.data);
+  saveLocal(data.data);
+  return true;
+}
+
+function save() {
+  const payload = serializeState();
+  saveLocal(payload);
+  scheduleRemoteSave(payload);
+}
+
+async function initAuth() {
+  try {
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+    if (error) {
+      console.error('Failed to get Supabase session', error);
+    }
+    await handleSessionChange(session);
+  } catch (err) {
+    console.error('Supabase session error', err);
+  }
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    handleSessionChange(session);
+  });
+}
+
+async function handleSessionChange(session) {
+  const previousUserId = state.currentUserId;
+  state.session = session;
+  state.currentUserId = session?.user?.id ?? null;
+
+  if (state.remoteSaveTimer) {
+    clearTimeout(state.remoteSaveTimer);
+    state.remoteSaveTimer = null;
+  }
+  state.pendingSavePayload = null;
+
+  if (previousUserId && previousUserId !== state.currentUserId) {
+    // Clear local cache for previous user to avoid leakage
+    localStorage.removeItem(getLocalSaveKey(previousUserId));
+  }
+
+  updateAuthUI();
+
+  if (state.currentUserId) {
+    const loadedLocal = loadLocal();
+    if (state.nodes.length === 0) {
+      createRootIfNeeded();
+    }
+    try {
+      const loadedRemote = await loadRemote();
+      if (!loadedRemote && state.nodes.length === 0) {
+        createRootIfNeeded();
+      }
+    } catch (err) {
+      console.error('Error loading Supabase data', err);
+    }
+  } else {
+    state.nodes = [];
+    state.nextId = 1;
+    state.pan = { x: 0, y: 0 };
+    state.scale = 1;
+    state.selectedId = null;
+    createRootIfNeeded();
+    centerView();
+  }
+
+  setTransform();
+  render();
+}
+
+function updateAuthUI() {
+  if (!loginBtn || !logoutBtn || !authStatus) return;
+  if (state.currentUserId) {
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-flex';
+    authStatus.textContent = state.session?.user?.email || 'Signed in';
+    authStatus.classList.add('badge-success');
+  } else {
+    loginBtn.style.display = 'inline-flex';
+    logoutBtn.style.display = 'none';
+    authStatus.textContent = 'Guest mode';
+    authStatus.classList.remove('badge-success');
+  }
+}
+
+function setAuthProcessing(isProcessing) {
+  state.isAuthProcessing = isProcessing;
+  if (authSubmitBtn) authSubmitBtn.disabled = isProcessing;
+  if (authEmailInput) authEmailInput.disabled = isProcessing;
+  if (authPasswordInput) authPasswordInput.disabled = isProcessing;
+}
+
+function updateAuthModal() {
+  if (!authModal || !authModalTitle || !authSubmitBtn || !authToggleMode) return;
+  const isSignUp = state.authMode === 'signup';
+  authModalTitle.textContent = isSignUp ? 'Create Account' : 'Sign In';
+  authSubmitBtn.textContent = isSignUp ? 'Create Account' : 'Sign In';
+  authToggleMode.textContent = isSignUp ? 'Already have an account? Sign in' : 'Need an account? Create one';
+  if (authDescription) {
+    authDescription.textContent = isSignUp
+      ? 'Set up a Supabase account to sync your mind maps across devices.'
+      : 'Sign in to access your saved mind maps from Supabase.';
+  }
+  if (authPasswordInput) {
+    authPasswordInput.placeholder = isSignUp ? 'Create a password (min 6 chars)' : 'Enter your password';
+    authPasswordInput.autocomplete = isSignUp ? 'new-password' : 'current-password';
+  }
+  if (authErrorMsg) authErrorMsg.textContent = '';
+  if (authSubmitBtn) authSubmitBtn.disabled = false;
+}
+
+function openAuthModal(mode = 'signin') {
+  if (!authModal) return;
+  state.authMode = mode;
+  updateAuthModal();
+  if (authForm) authForm.reset();
+  if (authErrorMsg) authErrorMsg.textContent = '';
+  authModal.style.display = 'flex';
+  requestAnimationFrame(() => authEmailInput?.focus());
+}
+
+function closeAuthModal() {
+  if (!authModal) return;
+  authModal.style.display = 'none';
+  setAuthProcessing(false);
+  if (authForm) authForm.reset();
+  if (authErrorMsg) authErrorMsg.textContent = '';
+  state.authMode = 'signin';
+  updateAuthModal();
+}
+
+async function handleAuthSubmit(e) {
+  e?.preventDefault?.();
+  if (!authEmailInput || !authPasswordInput) return;
+
+  const email = authEmailInput.value.trim();
+  const password = authPasswordInput.value.trim();
+  if (!email || !password) {
+    if (authErrorMsg) authErrorMsg.textContent = 'Email and password are required.';
+    return;
+  }
+
+  setAuthProcessing(true);
+  if (authErrorMsg) authErrorMsg.textContent = '';
+
+  try {
+    if (state.authMode === 'signin') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        if (authErrorMsg) authErrorMsg.textContent = error.message || 'Unable to sign in.';
+      } else {
+        closeAuthModal();
+      }
+    } else {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        if (authErrorMsg) authErrorMsg.textContent = error.message || 'Unable to create account.';
+      } else {
+        state.authMode = 'signin';
+        updateAuthModal();
+        if (authErrorMsg) authErrorMsg.textContent = 'Check your email to confirm the account, then sign in.';
+      }
+    }
+  } catch (err) {
+    if (authErrorMsg) authErrorMsg.textContent = err?.message || 'Unexpected error.';
+  } finally {
+    setAuthProcessing(false);
+  }
+}
+
+function signIn() {
+  openAuthModal('signin');
+}
+
+async function signOut() {
+  closeAuthModal();
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    alert(`Sign out failed: ${error.message}`);
   }
 }
 
@@ -674,6 +941,18 @@ colorPaletteContainer.addEventListener('click', (e) => {
     e.target.classList.add('selected');
   }
 });
+loginBtn?.addEventListener('click', signIn);
+logoutBtn?.addEventListener('click', signOut);
+authForm?.addEventListener('submit', handleAuthSubmit);
+authToggleMode?.addEventListener('click', (e) => {
+  e.preventDefault();
+  state.authMode = state.authMode === 'signin' ? 'signup' : 'signin';
+  updateAuthModal();
+});
+authCloseBtn?.addEventListener('click', closeAuthModal);
+authModal?.addEventListener('click', (e) => {
+  if (e.target === authModal) closeAuthModal();
+});
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 searchInput.addEventListener('input', (e) => {
@@ -763,6 +1042,10 @@ viewport.addEventListener('mouseout', (e) => {
 });
 
 window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && authModal && authModal.style.display !== 'none') {
+        closeAuthModal();
+        return;
+    }
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') { e.preventDefault(); editSelected(); }
@@ -771,12 +1054,16 @@ window.addEventListener('keydown', (e) => {
 });
 
 function init() {
-  if (!load()) createRootIfNeeded();
+  const hasLocalData = loadLocal();
+  if (!hasLocalData || state.nodes.length === 0) {
+    createRootIfNeeded();
+  }
   setupTheme();
   setTransform();
   render();
   centerView();
   setupHelpWidget();
+  initAuth();
 }
 
 document.addEventListener('DOMContentLoaded', init);
