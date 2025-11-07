@@ -153,38 +153,55 @@ svg#wires{
 .node{
   position:absolute; transform: translate(-50%, -50%);
   width:240px;
-  background:var(--panel); border:1px solid var(--border-color);
-  border-left: 4px solid var(--muted);
-  border-radius:14px; padding:12px; box-shadow:var(--shadow);
   user-select:none; cursor:grab; transition: box-shadow .2s ease, transform .2s ease, background .2s ease, border-color .2s ease;
   z-index: 20;
 }
-.node:focus{ outline:none; }
-.node:hover {
-  background: var(--panel-hover);
-  border-color: rgba(124,92,255,.35);
-  transform: translate(-50%, -50%) scale(1.02);
+.node .node-inner{
+  background-color: var(--panel);
+  background-image: linear-gradient(to right, var(--node-accent, var(--muted)) 0 8px, transparent 8px);
+  border:2px solid var(--border-color);
+  border-radius:14px; padding:12px; box-shadow:var(--shadow);
+  overflow: hidden;
 }
-.node .title{ font-weight:800; font-size:15px; letter-spacing:.2px; margin-bottom: 4px; }
-.node .description{ font-size: 13px; color: var(--muted); margin-bottom: 8px; white-space: pre-wrap; }
+.node:focus{ outline:none; }
+.node:hover { transform: translate(-50%, -50%) scale(1.02); }
+.node:hover .node-inner { background-color: var(--panel-hover); border-color: rgba(124,92,255,.35); }
+.node .title{ font-weight:800; font-size:15px; letter-spacing:.2px; margin-bottom: 4px; line-height: 1.25; word-break: break-word; overflow-wrap: anywhere; }
+.node .description{ font-size: 13px; color: var(--muted); margin-bottom: 8px; white-space: pre-wrap; line-height: 1.35; }
 .node .url{ font-size:12px; color:var(--link); text-decoration:none; word-break:break-all; }
 .node .meta{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; color:var(--muted); font-size:12px; border-top: 1px solid var(--border-color); padding-top: 8px; }
 .node .chip{ padding:3px 6px; border-radius:8px; border:1px solid var(--border-color); }
-.node.selected{ box-shadow:0 0 0 3px var(--accent), var(--shadow); background: var(--panel-selected); border-color: rgba(124,92,255,.45); }
-.node.highlight{ box-shadow:0 0 0 3px var(--accent-2), var(--shadow); background: var(--panel-highlight); border-color: rgba(34,211,238,.45); }
+.node .node-header{ display:flex; align-items:center; gap:10px; }
+.node .node-icon{ width:28px; height:28px; display:flex; align-items:center; justify-content:center; color: var(--muted); flex:0 0 auto; }
+.node .node-icon .brain-svg{ width:100%; height:100%; }
+.node .node-text{ min-width:0; display:flex; flex-direction:column; gap:2px; }
+.node.shape-brain .node-inner{ padding:16px 16px 12px 16px; }
+.node.shape-brain .title{ font-size:17px; }
+.node.shape-brain .description{ margin-top:8px; }
+.node.shape-brain .node-icon{ width:32px; height:32px; color: var(--c9); }
+.node.shape-diamond .node-inner,
+.node.shape-chevron .node-inner,
+.node.shape-trapezoid .node-inner { padding: 18px 24px 14px; }
+.node.shape-hexagon .node-inner,
+.node.shape-octagon .node-inner,
+.node.shape-star .node-inner { padding: 18px 22px 14px; }
+.node.shape-pill .node-inner,
+.node.shape-ellipse .node-inner,
+.node.shape-cloud .node-inner { padding: 14px 18px 12px; }
+.node.shape-document .node-inner,
+.node.shape-folder .node-inner,
+.node.shape-tag .node-inner,
+.node.shape-bookmark .node-inner,
+.node.shape-ribbon .node-inner { padding: 14px 18px 12px; }
+.node.selected .node-inner{ box-shadow:0 0 0 3px var(--accent), var(--shadow); background-color: var(--panel-selected); border-color: rgba(124,92,255,.45); }
+.node.highlight .node-inner{ box-shadow:0 0 0 3px var(--accent-2), var(--shadow); background-color: var(--panel-highlight); border-color: rgba(34,211,238,.45); }
 
 .node.locked {
   cursor: default;
 }
-.node.guest-readonly {
-  cursor: default;
-  opacity: 0.85;
-}
-.node.guest-readonly:hover {
-  background: var(--panel);
-  border-color: var(--border-color);
-  transform: translate(-50%, -50%) scale(1);
-}
+.node.guest-readonly { cursor: default; opacity: 0.85; }
+.node.guest-readonly:hover { transform: translate(-50%, -50%) scale(1); }
+.node.guest-readonly .node-inner { background-color: var(--panel); border-color: var(--border-color); }
 .node-lock-icon {
   position: absolute;
   top: 10px;
@@ -222,17 +239,26 @@ svg#wires{
 }
 
 /* Node Colors */
-.node.color-1 { border-left-color: var(--c1); } .node.color-2 { border-left-color: var(--c2); }
-.node.color-3 { border-left-color: var(--c3); } .node.color-4 { border-left-color: var(--c4); }
-.node.color-5 { border-left-color: var(--c5); } .node.color-6 { border-left-color: var(--c6); }
-.node.color-7 { border-left-color: var(--c7); } .node.color-8 { border-left-color: var(--c8); }
-.node.color-9 { border-left-color: var(--c9); } .node.color-10 { border-left-color: var(--c10); }
-.node.color-11 { border-left-color: var(--c11); } .node.color-12 { border-left-color: var(--c12); }
+.node.color-1 { border-left-color: var(--c1); --node-accent: var(--c1); } .node.color-2 { border-left-color: var(--c2); --node-accent: var(--c2); }
+.node.color-3 { border-left-color: var(--c3); --node-accent: var(--c3); } .node.color-4 { border-left-color: var(--c4); --node-accent: var(--c4); }
+.node.color-5 { border-left-color: var(--c5); --node-accent: var(--c5); } .node.color-6 { border-left-color: var(--c6); --node-accent: var(--c6); }
+.node.color-7 { border-left-color: var(--c7); --node-accent: var(--c7); } .node.color-8 { border-left-color: var(--c8); --node-accent: var(--c8); }
+.node.color-9 { border-left-color: var(--c9); --node-accent: var(--c9); } .node.color-10 { border-left-color: var(--c10); --node-accent: var(--c10); }
+.node.color-11 { border-left-color: var(--c11); --node-accent: var(--c11); } .node.color-12 { border-left-color: var(--c12); --node-accent: var(--c12); }
 
 
 /* Connection lines */
 .wire{ stroke:url(#wireGrad); stroke-width:2.5; fill:none; opacity:.9; transition: all .2s ease; }
 .wire.shadow{ stroke:rgba(0,0,0,.6); stroke-width:6; filter: blur(6px); opacity:.7; transition: all .2s ease; }
+
+.wire-label{
+  fill: var(--ink);
+  font-size: 12px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  opacity: .9;
+  pointer-events: none;
+}
 
 .wire.active {
     stroke: var(--accent);
@@ -246,6 +272,30 @@ svg#wires{
 /* Grid background */
 .grid{ position:absolute; inset:0; background-image: radial-gradient(var(--grid-color) 1px, transparent 1px);
        background-size: 26px 26px; mask-image: radial-gradient(800px 800px at 50% 50%, rgba(0,0,0,1), rgba(0,0,0,0.35)); pointer-events:none; }
+.node.shape-brain { width: 300px; }
+.node.shape-diamond, .node.shape-hexagon, .node.shape-octagon, .node.shape-star { width: 260px; }
+.node.shape-document, .node.shape-folder { width: 260px; }
+.node.shape-ellipse, .node.shape-pill { width: 260px; }
+.node.shape-rounded .node-inner, .shape-swatch.shape-rounded { border-radius: 14px; }
+.node.shape-rectangle .node-inner, .shape-swatch.shape-rectangle { border-radius: 6px; }
+.node.shape-pill .node-inner, .shape-swatch.shape-pill { border-radius: 999px; }
+.node.shape-ellipse .node-inner, .shape-swatch.shape-ellipse { border-radius: 50% / 35%; }
+.node.shape-diamond .node-inner, .shape-swatch.shape-diamond { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.node.shape-hexagon .node-inner, .shape-swatch.shape-hexagon { clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+.node.shape-octagon .node-inner, .shape-swatch.shape-octagon { clip-path: polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%); }
+.node.shape-parallelogram .node-inner, .shape-swatch.shape-parallelogram { clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%); }
+.node.shape-trapezoid .node-inner, .shape-swatch.shape-trapezoid { clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%); }
+.node.shape-chevron .node-inner, .shape-swatch.shape-chevron { clip-path: polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0 50%); }
+.node.shape-tag .node-inner, .shape-swatch.shape-tag { clip-path: polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%); }
+.node.shape-bookmark .node-inner, .shape-swatch.shape-bookmark { clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%); }
+.node.shape-ribbon .node-inner, .shape-swatch.shape-ribbon { clip-path: polygon(0 0, 100% 0, 100% 70%, 85% 70%, 100% 100%, 60% 70%, 0 70%); }
+.node.shape-document .node-inner, .shape-swatch.shape-document { clip-path: polygon(0 0, 85% 0, 100% 15%, 100% 100%, 0 100%); }
+.node.shape-folder .node-inner, .shape-swatch.shape-folder { clip-path: polygon(0 28%, 24% 28%, 28% 0, 100% 0, 100% 100%, 0 100%); }
+.node.shape-star .node-inner, .shape-swatch.shape-star { clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.node.shape-cloud .node-inner, .shape-swatch.shape-cloud { border-radius: 36px; }
+.node.shape-notch .node-inner, .shape-swatch.shape-notch { clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%, 0 8%); }
+.node.shape-cut .node-inner, .shape-swatch.shape-cut { clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%); }
+.node.shape-brain .node-inner, .shape-swatch.shape-brain { border-radius: 40px 50px 40px 50px / 36px 44px 36px 44px; }
 
 /* Hidden file input */
 #file{ display:none; }
@@ -399,6 +449,14 @@ svg#wires{
 }
 .color-swatch:hover { transform: scale(1.1); }
 .color-swatch.selected { border-color: var(--ink); transform: scale(1.1); }
+
+.shape-palette { display: flex; flex-wrap: wrap; gap: 8px; }
+.shape-swatch {
+  width: 44px; height: 28px; border: 1px solid var(--border-color); border-radius: 10px;
+  background: var(--panel); cursor: pointer; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.shape-swatch:hover { transform: scale(1.05); border-color: var(--accent); }
+.shape-swatch.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124,92,255,.25); }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 

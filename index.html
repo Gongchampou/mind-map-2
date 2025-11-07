@@ -6,6 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" href="image/favicon.ico">
   <title>Brainwave - Visual Mind Mapper</title>
 
   <meta name="description" content="Organize your ideas with a powerful and intuitive mind mapping tool. Create, link, and customize nodes with titles, descriptions, and colors." />
@@ -58,6 +59,10 @@
       <button id="layoutBtn" title="Auto arrange nodes in a tree layout">Tree Layout</button>
       <button id="centerBtn" title="Center the canvas">Center View</button>
       <button id="resetBtn" title="Reset zoom & pan to default">Reset Zoom</button>
+    </div>
+
+    <div class="group">
+      <button id="linkNodesBtn" title="Link Parent and Child by IDs">Link IDs</button>
     </div>
 
     <div class="group auth-group">
@@ -151,6 +156,14 @@
         <div class="form-group">
           <label for="nodeDescTextarea">Short Description (optional)</label>
           <textarea id="nodeDescTextarea" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="edgeLabelInput">Line Name (optional)</label>
+          <input type="text" id="edgeLabelInput">
+        </div>
+        <div class="form-group">
+          <label>Shape</label>
+          <div id="shapePalette" class="shape-palette"></div>
         </div>
         <div class="form-group">
           <label>Color</label>

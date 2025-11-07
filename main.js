@@ -20,6 +20,8 @@ const nodeTitleInput = document.getElementById('nodeTitleInput');
 const nodeUrlInput = document.getElementById('nodeUrlInput');
 const nodeDescTextarea = document.getElementById('nodeDescTextarea');
 const colorPaletteContainer = document.getElementById('colorPalette');
+const shapePaletteContainer = document.getElementById('shapePalette');
+const edgeLabelInput = document.getElementById('edgeLabelInput');
 const helpWidget = document.getElementById('helpWidget');
 const helpToggleBtn = document.getElementById('helpToggleBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -53,6 +55,7 @@ const toolbar = document.getElementById('toolbar');
 const SAVE_KEY = 'brainwave-mindmap-v2'; // Incremented version for new features
 const THEME_KEY = 'brainwave-theme';
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899'];
+const SHAPES = ['rounded','rectangle','pill','ellipse','diamond','hexagon','octagon','parallelogram','trapezoid','chevron','tag','bookmark','ribbon','document','folder','star','cloud','notch','cut','brain'];
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const DEFAULT_NODE_HEIGHT = 140;
 const NODE_VERTICAL_GAP = 60;
@@ -83,6 +86,8 @@ const state = {
     startPan: { x: 0, y: 0 },
     nodeStartPos: { x: 0, y: 0 },
   }
+  ,
+  links: []
 };
 
 // ----- State Management & Utils -----
@@ -93,6 +98,7 @@ function serializeState() {
     pan: state.pan,
     scale: state.scale,
     selectedId: state.selectedId,
+    links: state.links || [],
   };
 }
 
@@ -106,6 +112,7 @@ function applyPersistedState(obj) {
   state.pan = obj.pan || { x: 0, y: 0 };
   state.scale = obj.scale || 1;
   state.selectedId = obj.selectedId || null;
+  state.links = Array.isArray(obj.links) ? obj.links : [];
 }
 
 function getLocalSaveKey(userId = state.currentUserId) {
@@ -297,6 +304,8 @@ function updateAuthUI() {
   // File operations (hidden in guest mode)
   if (exportBtn) exportBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
   if (importLabel) importLabel.style.display = isSignedIn ? 'inline-flex' : 'none';
+  const linkNodesBtnEl = document.getElementById('linkNodesBtn');
+  if (linkNodesBtnEl) linkNodesBtnEl.style.display = isSignedIn ? 'inline-flex' : 'none';
   
   // Search and theme toggle (always visible)
   // These are already visible by default, no change needed
@@ -494,7 +503,7 @@ function render() {
         }
 
         const isGuestMode = !state.currentUserId;
-        el.className = `node color-${n.color || 9}` 
+        el.className = `node shape-${n.shape || 'rounded'} color-${n.color || 9}` 
             + (state.selectedId === n.id ? ' selected' : '')
             + (n.locked ? ' locked' : '')
             + (isGuestMode ? ' guest-readonly' : '');
@@ -513,13 +522,30 @@ function render() {
         const isCollapsed = n.collapsed;
 
         el.innerHTML = `
-          ${n.locked ? `<svg class="node-lock-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>` : ''}
-          <div class="title">${escapeHtml(n.title || '(untitled)')}</div>
-          ${n.description ? `<div class="description">${escapeHtml(n.description)}</div>` : ''}
-          ${n.url ? `<a class="url" href="${escapeAttr(n.url)}" target="_blank" rel="noopener">${escapeHtml(n.url)}</a>` : ''}
-          <div class="meta">
-            <span class="chip">${childrenOf(n.id).length} children</span>
-            <span class="chip">ID: ${n.id}</span>
+          <div class="node-inner">
+            ${n.locked ? `<svg class="node-lock-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>` : ''}
+            <div class="node-header">
+              ${n.shape === 'brain' ? `
+                <div class="node-icon brain-icon">
+                  <svg class="brain-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 7v10"/>
+                    <path d="M9 4a3 3 0 0 0-3 3c0 1.1.9 2 2 2h2"/>
+                    <path d="M15 4a3 3 0 0 1 3 3c0 1.1-.9 2-2 2h-2"/>
+                    <path d="M8 9c-1.7 0-3 1.3-3 3 0 1.1.9 2 2 2h1v2a3 3 0 0 0 3 3"/>
+                    <path d="M16 9c1.7 0 3 1.3 3 3 0 1.1-.9 2-2 2h-1v2a3 3 0 0 1-3 3"/>
+                  </svg>
+                </div>
+              ` : ''}
+              <div class="node-text">
+                <div class="title">${escapeHtml(n.title || '(untitled)')}</div>
+                ${n.url ? `<a class="url" href="${escapeAttr(n.url)}" target="_blank" rel="noopener">${escapeHtml(n.url)}</a>` : ''}
+              </div>
+            </div>
+            ${n.description ? `<div class="description">${escapeHtml(n.description)}</div>` : ''}
+            <div class="meta">
+              <span class="chip">${childrenOf(n.id).length} children</span>
+              <span class="chip">ID: ${n.id}</span>
+            </div>
           </div>
           ${hasChildren && state.currentUserId ? `<div class="node-collapse-toggle" title="${isCollapsed ? 'Expand' : 'Collapse'}">${isCollapsed ? '+' : '−'}</div>` : ''}
         `;
@@ -581,8 +607,9 @@ function renderWires(visibleNodes) {
                 startX = p.x + (childOnLeft ? -pHalfW : pHalfW);
                 endX = n.x + (childOnLeft ? nHalfW : -nHalfW);
             } else {
-                startX = p.x + pHalfW;
-                endX = n.x - nHalfW;
+                const childOnLeft = n.x < p.x;
+                startX = p.x + (childOnLeft ? -pHalfW : pHalfW);
+                endX = n.x + (childOnLeft ? nHalfW : -nHalfW);
             }
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -597,6 +624,59 @@ function renderWires(visibleNodes) {
             path.setAttribute('d', c); path.setAttribute('class', 'wire');
             wiresSVG.appendChild(shadow);
             wiresSVG.appendChild(path);
+
+            if (n.edgeLabel) {
+                const labelX = (startX + endX) / 2 - minX;
+                const labelY = (startY + endY) / 2 - minY;
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('class', 'wire-label');
+                text.setAttribute('x', String(labelX));
+                text.setAttribute('y', String(labelY));
+                text.textContent = String(n.edgeLabel);
+                wiresSVG.appendChild(text);
+            }
+        }
+    });
+
+    (state.links || []).forEach(link => {
+        const from = byId(link.fromId);
+        const to = byId(link.toId);
+        if (!from || !to) return;
+        if (!visibleNodeIds.has(from.id) || !visibleNodeIds.has(to.id)) return;
+
+        const pHalfW = (from.width || 240) / 2;
+        const nHalfW = (to.width || 240) / 2;
+
+        let startX, startY, endX, endY;
+        startY = from.y;
+        endY = to.y;
+
+        const childOnLeft = to.x < from.x;
+        startX = from.x + (childOnLeft ? -pHalfW : pHalfW);
+        endX = to.x + (childOnLeft ? nHalfW : -nHalfW);
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.dataset.linkFrom = from.id;
+        path.dataset.linkTo = to.id;
+        shadow.dataset.linkFrom = from.id;
+        shadow.dataset.linkTo = to.id;
+
+        const d = orthogonalConnector(startX - minX, startY - minY, endX - minX, endY - minY);
+        shadow.setAttribute('d', d); shadow.setAttribute('class', 'wire shadow');
+        path.setAttribute('d', d); path.setAttribute('class', 'wire');
+        wiresSVG.appendChild(shadow);
+        wiresSVG.appendChild(path);
+
+        if (link.label) {
+            const labelX = (startX + endX) / 2 - minX;
+            const labelY = (startY + endY) / 2 - minY;
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('class', 'wire-label');
+            text.setAttribute('x', String(labelX));
+            text.setAttribute('y', String(labelY));
+            text.textContent = String(link.label);
+            wiresSVG.appendChild(text);
         }
     });
 }
@@ -673,7 +753,7 @@ function openModal({ isNew = false, parentId = null } = {}) {
   state.editingNodeId = isNew ? null : state.selectedId;
   modalTitle.textContent = isNew ? 'Add Child Node' : 'Edit Node';
 
-  let nodeData = { title: '', url: '', description: '', color: Math.floor(Math.random() * 12) + 1 };
+  let nodeData = { title: '', url: '', description: '', color: Math.floor(Math.random() * 12) + 1, shape: 'rounded' };
   if (!isNew && state.editingNodeId) {
     const n = byId(state.editingNodeId);
     if (n) nodeData = { ...n };
@@ -684,6 +764,12 @@ function openModal({ isNew = false, parentId = null } = {}) {
   nodeTitleInput.value = nodeData.title;
   nodeUrlInput.value = nodeData.url;
   nodeDescTextarea.value = nodeData.description;
+  if (edgeLabelInput) edgeLabelInput.value = nodeData.edgeLabel || '';
+  if (shapePaletteContainer) {
+    shapePaletteContainer.innerHTML = SHAPES.map(shape => `
+      <div class="shape-swatch ${nodeData.shape === shape ? 'selected' : ''} shape-${shape}" data-shape="${shape}" title="${shape}"></div>
+    `).join('');
+  }
 
   colorPaletteContainer.innerHTML = COLORS.map((color, i) => `
     <div class="color-swatch ${nodeData.color === i + 1 ? 'selected' : ''}" 
@@ -710,11 +796,14 @@ modalForm.addEventListener('submit', (e) => {
   const description = nodeDescTextarea.value.trim();
   const selectedSwatch = colorPaletteContainer.querySelector('.selected');
   const color = selectedSwatch ? parseInt(selectedSwatch.dataset.colorIndex) : 1;
+  const edgeLabel = edgeLabelInput ? edgeLabelInput.value.trim() : '';
+  const selectedShapeEl = shapePaletteContainer ? shapePaletteContainer.querySelector('.selected') : null;
+  const shape = selectedShapeEl ? selectedShapeEl.dataset.shape : 'rounded';
 
   if (state.editingNodeId) {
     const node = byId(state.editingNodeId);
     if (node) {
-      Object.assign(node, { title, url, description, color });
+      Object.assign(node, { title, url, description, color, edgeLabel, shape });
     }
   } else {
     const parentId = nodeIdInput.dataset.parentId;
@@ -743,7 +832,7 @@ modalForm.addEventListener('submit', (e) => {
         targetY = lastBottom + NODE_VERTICAL_GAP + DEFAULT_NODE_HEIGHT / 2;
     }
 
-    state.nodes.push({ id, title, url, description, color, x: (p.x || 0) + 350, y: targetY, parentId: p.id, collapsed: false, locked: false });
+    state.nodes.push({ id, title, url, description, color, edgeLabel, shape, x: (p.x || 0) + 350, y: targetY, parentId: p.id, collapsed: false, locked: false });
     selectNode(id);
   }
 
@@ -775,7 +864,42 @@ function deleteSelected() {
   const toDelete = new Set();
   (function walk(x) { toDelete.add(x); childrenOf(x).forEach(c => walk(c.id)); })(id);
   state.nodes = state.nodes.filter(n => !toDelete.has(n.id));
+  if (Array.isArray(state.links)) {
+    state.links = state.links.filter(l => !toDelete.has(l.fromId) && !toDelete.has(l.toId));
+  }
   selectNode(null);
+  save();
+  render();
+}
+
+function wouldCreateCycle(newParentId, childId) {
+  let curr = newParentId;
+  while (curr) {
+    if (curr === childId) return true;
+    const n = byId(curr);
+    curr = n?.parentId || null;
+  }
+  return false;
+}
+
+function linkNodesById() {
+  if (!state.currentUserId) return;
+  const parentId = prompt('Enter Parent ID:');
+  if (!parentId) return;
+  const childId = prompt('Enter Child ID:');
+  if (!childId) return;
+  const p = byId(String(parentId).trim());
+  const c = byId(String(childId).trim());
+  if (!p || !c) { alert('Invalid ID(s).'); return; }
+  if (p.id === c.id) { alert('Parent and child must be different.'); return; }
+  const label = prompt('Enter line name (optional):') || '';
+  if (!Array.isArray(state.links)) state.links = [];
+  const existing = state.links.find(l => l.fromId === p.id && l.toId === c.id);
+  if (existing) {
+    existing.label = label;
+  } else {
+    state.links.push({ fromId: p.id, toId: c.id, label });
+  }
   save();
   render();
 }
@@ -847,6 +971,7 @@ function exportJSON() {
   const payload = {
     nodes: nodesToExport,
     nextId: state.nextId,
+    links: state.links || [],
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1005,6 +1130,8 @@ document.getElementById('layoutBtn').onclick = treeLayout;
 document.getElementById('centerBtn').onclick = centerView;
 document.getElementById('resetBtn').onclick = resetZoom;
 document.getElementById('exportBtn').onclick = exportJSON;
+const linkNodesBtn = document.getElementById('linkNodesBtn');
+if (linkNodesBtn) linkNodesBtn.onclick = linkNodesById;
 document.getElementById('file').addEventListener('change', (e) => {
   if (!state.currentUserId) {
     e.target.value = '';
@@ -1024,6 +1151,7 @@ document.getElementById('file').addEventListener('change', (e) => {
           if (n.locked === undefined) n.locked = false;
       });
       state.nextId = inferNextId(state.nodes, obj.nextId);
+      state.links = Array.isArray(obj.links) ? obj.links : [];
       selectNode(null);
       save();
       render();
@@ -1042,6 +1170,15 @@ colorPaletteContainer.addEventListener('click', (e) => {
     e.target.classList.add('selected');
   }
 });
+if (shapePaletteContainer) {
+  shapePaletteContainer.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t.classList.contains('shape-swatch')) {
+      shapePaletteContainer.querySelector('.selected')?.classList.remove('selected');
+      t.classList.add('selected');
+    }
+  });
+}
 loginBtn?.addEventListener('click', signIn);
 logoutBtn?.addEventListener('click', signOut);
 authForm?.addEventListener('submit', handleAuthSubmit);
