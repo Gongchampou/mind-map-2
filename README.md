@@ -1,4 +1,120 @@
-# mindmap
-- websiite link
+# Brainwave – Visual Mind Mapper
 
-step to install
+A fast, minimal, keyboard‑friendly mind‑mapping app built with Vite and vanilla JavaScript. Supports cloud sync via Supabase.
+
+## Features
+- **Create, edit, delete** nodes with titles, URLs, descriptions, and colors
+- **Drag & drop** nodes, auto **Tree Layout**, and smooth **zoom/pan**
+- **Search** with inline highlighting
+- **Lock** nodes to prevent moving
+- **Import/Export** JSON
+- **Light/Dark theme** toggle and **mobile menu**
+- Optional **Supabase sync** per user
+
+## Requirements
+- Node.js 18+ (Node 20/22 recommended)
+- npm (bundled with Node)
+
+## Quick Start
+```bash
+npm install
+npm run dev
+# Open http://localhost:5173
+```
+
+### Build & Preview
+```bash
+npm run build
+npm run preview
+```
+
+## Supabase (optional, enables editing and sync)
+By default you’ll be in Guest mode. In the current configuration, most editing actions are disabled in Guest mode. To enable full functionality and cloud sync, configure Supabase.
+
+### 1) Create a Supabase project
+https://supabase.com → New project → Get the Project URL and Anon Key from Project Settings → API.
+
+### 2) Create the `mindmaps` table and policies
+Run this SQL in Supabase SQL Editor:
+
+```sql
+create table if not exists public.mindmaps (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null,
+  updated_at timestamptz default now()
+);
+
+alter table public.mindmaps enable row level security;
+
+create policy "select own map"
+on public.mindmaps for select
+using (auth.uid() = user_id);
+
+create policy "insert own map"
+on public.mindmaps for insert
+with check (auth.uid() = user_id);
+
+create policy "update own map"
+on public.mindmaps for update
+using (auth.uid() = user_id);
+```
+
+### 3) Add environment variables
+Create a file named `.env.local` in the project root with:
+
+```bash
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Restart the dev server after adding env vars.
+
+## Usage
+- **Sign In/Out**: Top‑right. After signing in, your toolbar actions are enabled and your map is synced to Supabase.
+- **Add Child**: Button “+ Child” or keys `A` / `+`.
+- **Edit**: Button “Edit” or `Ctrl+E`.
+- **Delete**: Button “Delete” or `Delete` / `Backspace`.
+- **Lock/Unlock**: Lock button or press `L`.
+- **Tree Layout**: Auto‑arrange nodes.
+- **Center View / Reset Zoom**: Navigation helpers. Always available.
+- **Zoom/Pan**: Mouse wheel to zoom; drag background to pan.
+- **Open URL**: Double‑click a node with a URL.
+- **Search**: Use the search field (desktop or mobile) to highlight matches.
+- **Import/Export JSON**: Export downloads a JSON; Import loads from a JSON file.
+- **Theme**: Sun/Moon button toggles light/dark.
+- **layout**: auto fixed it the or flex layout according to the device like mobile, tablet, desktop.
+- **Mobile**: Use the hamburger button to open the toolbar.
+
+## Screenshots (placeholders)
+Add screenshots to `docs/screenshots/` and keep the filenames below for the README:
+
+![Overview](docs/screenshots/overview.png)
+![Toolbar](docs/screenshots/toolbar.png)
+![Add/Edit Modal](docs/screenshots/modal.png)
+![Mobile Menu](docs/screenshots/mobile-menu.png)
+![Search Highlight](docs/screenshots/search.png)
+![Theme Toggle](docs/screenshots/theme-toggle.png)
+
+Tips for capturing:
+- Use mock content with a few nodes and colors.
+- Show both light and dark themes.
+- Include a screenshot demonstrating hover highlights and wires.
+
+## Keyboard Shortcuts
+- `A` / `+`: Add child
+- `Ctrl+E`: Edit selected
+- `Delete` / `Backspace`: Delete selected
+- `L`: Lock/Unlock selected
+- `Esc`: Close auth modal or mobile menu when open
+
+## Troubleshooting
+- **Buttons don’t respond**: You’re likely in Guest mode. Configure Supabase and sign in (see above). Check the browser console for a warning: “Supabase environment variables are missing …”.
+- **Change port**: `npm run dev -- --port 5174`
+- **Access from phone/LAN**: `npm run dev -- --host`
+- **Reset local data**: Clear LocalStorage keys starting with `brainwave-mindmap-v2:` in your browser dev tools.
+- **Build errors**: Ensure Node 18+ and delete `node_modules` if needed, then `npm install`.
+
+## Tech Stack
+- Vite 5
+- Vanilla JS, HTML, CSS
+- Supabase (optional)
