@@ -569,10 +569,21 @@ function renderWires(visibleNodes) {
             const p = byId(n.parentId);
             if (!p) return;
 
-            const startX = p.x + (p.width / 2);
-            const startY = p.y;
-            const endX = n.x - (n.width / 2);
-            const endY = n.y;
+            const pHalfW = (p.width || 240) / 2;
+            const nHalfW = (n.width || 240) / 2;
+
+            let startX, startY, endX, endY;
+            startY = p.y;
+            endY = n.y;
+
+            if (p.id === 'root') {
+                const childOnLeft = n.x < p.x;
+                startX = p.x + (childOnLeft ? -pHalfW : pHalfW);
+                endX = n.x + (childOnLeft ? nHalfW : -nHalfW);
+            } else {
+                startX = p.x + pHalfW;
+                endX = n.x - nHalfW;
+            }
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
