@@ -4,6 +4,7 @@
  */
 
 // ----- DOM Element References -----
+const stage = document.getElementById('stage');
 const viewport = document.getElementById('viewport');
 const wiresSVG = document.getElementById('wires');
 const selTxt = document.getElementById('selTxt');
@@ -26,6 +27,8 @@ const SAVE_KEY = 'brainwave-mindmap-v2'; // Incremented version for new features
 const THEME_KEY = 'brainwave-theme';
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899'];
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+const DEFAULT_NODE_HEIGHT = 140;
+const NODE_VERTICAL_GAP = 60;
 
 // ----- Application State -----
 const state = {
@@ -99,6 +102,23 @@ function createRootIfNeeded() {
 
 const byId = (id) => state.nodes.find(n => n.id === id);
 const childrenOf = (id) => state.nodes.filter(n => n.parentId === id);
+const inferNextId = (nodes, providedNextId) => {
+    const numericIds = nodes
+        .map(n => {
+            const numeric = Number(n?.id);
+            return Number.isFinite(numeric) ? numeric : null;
+        })
+        .filter((n) => n !== null);
+
+    const maxNumericId = numericIds.length ? Math.max(...numericIds) : 0;
+    const coercedNextId = Number(providedNextId);
+
+    if (Number.isFinite(coercedNextId) && coercedNextId > maxNumericId) {
+        return Math.floor(coercedNextId);
+    }
+
+    return maxNumericId + 1;
+};
 const escapeHtml = (s) => (s + "").replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const escapeAttr = (s) => (s + "").replace(/["<>]/g, c => ({ '"': '&quot;', '<': '&lt;', '>': '&gt;' }[c]));
 
@@ -357,8 +377,21 @@ modalForm.addEventListener('submit', (e) => {
     }
     
     const id = String(state.nextId++);
-    const yOffset = (childrenOf(p.id).length * 120) - (childrenOf(p.id).length > 1 ? childrenOf(p.id).length * 60 : 0);
-    state.nodes.push({ id, title, url, description, color, x: (p.x || 0) + 350, y: (p.y || 0) + yOffset, parentId: p.id, collapsed: false, locked: false });
+    const siblings = childrenOf(p.id);
+    let targetY;
+
+    if (siblings.length === 0) {
+        targetY = p.y || 0;
+    } else {
+        const lastBottom = siblings.reduce((max, child) => {
+            const height = child.height ?? DEFAULT_NODE_HEIGHT;
+            return Math.max(max, child.y + height / 2);
+        }, -Infinity);
+
+        targetY = lastBottom + NODE_VERTICAL_GAP + DEFAULT_NODE_HEIGHT / 2;
+    }
+
+    state.nodes.push({ id, title, url, description, color, x: (p.x || 0) + 350, y: targetY, parentId: p.id, collapsed: false, locked: false });
     selectNode(id);
   }
 
@@ -437,6 +470,14 @@ function centerView() {
   save();
 }
 
+function focusOnNode(node) {
+  if (!node) return;
+  const rect = stage?.getBoundingClientRect() || document.body.getBoundingClientRect();
+  state.pan.x = rect.width / 2 - node.x * state.scale;
+  state.pan.y = rect.height / 2 - node.y * state.scale;
+  setTransform();
+}
+
 function resetZoom() { state.scale = 1; state.pan = { x: 0, y: 0 }; setTransform(); save(); render(); centerView(); }
 
 // ----- Export / Import -----
@@ -467,33 +508,36 @@ function handlePointerDown(e) {
         return;
     }
 
-    const nodeElement = target.closest('.node');
-    if (nodeElement) {
-        const node = byId(nodeElement.dataset.id);
-        selectNode(node.id); // Allow selection regardless of lock state
-        if (node.locked || e.button !== 0) return; // Prevent drag if locked
+  const nodeElement = target.closest('.node');
+  if (nodeElement) {
+    const node = byId(nodeElement.dataset.id);
+    selectNode(node.id); // Allow selection regardless of lock state
+    if (node.locked || e.button !== 0) return; // Prevent drag if locked
 
-        nodeElement.style.cursor = 'grabbing';
-        state.dragState = {
-            isDraggingNode: true,
-            isPanning: false,
-            nodeId: node.id,
-            startX: e.clientX,
-            startY: e.clientY,
-            nodeStartPos: { x: node.x, y: node.y },
-        };
-        nodeElement.setPointerCapture(e.pointerId);
-    } else if (target.closest('#viewport')) {
-        state.dragState = {
-            isPanning: true,
-            isDraggingNode: false,
-            startX: e.clientX,
-            startY: e.clientY,
-            startPan: { ...state.pan },
-        };
-        document.body.classList.add('is-panning');
-        viewport.setPointerCapture(e.pointerId);
-    }
+    nodeElement.style.cursor = 'grabbing';
+    state.dragState = {
+      isDraggingNode: true,
+      isPanning: false,
+      nodeId: node.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      nodeStartPos: { x: node.x, y: node.y },
+    };
+    nodeElement.setPointerCapture(e.pointerId);
+  } else if (target.closest('#stage')) {
+    if (e.button !== 0) return;
+    state.dragState = {
+      isPanning: true,
+      isDraggingNode: false,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPan: { ...state.pan },
+    };
+    document.body.classList.add('is-panning');
+
+    const captureEl = target.closest('#viewport') ? viewport : stage;
+    captureEl?.setPointerCapture?.(e.pointerId);
+  }
 }
 
 function handlePointerMove(e) {
@@ -530,6 +574,8 @@ function handlePointerUp(e) {
     if (nodeEl) nodeEl.style.cursor = 'grab';
     save();
   }
+  if (stage?.hasPointerCapture?.(e.pointerId)) stage.releasePointerCapture(e.pointerId);
+  if (viewport?.hasPointerCapture?.(e.pointerId)) viewport.releasePointerCapture(e.pointerId);
   state.dragState = { isPanning: false, isDraggingNode: false, nodeId: null };
 }
 
@@ -609,7 +655,7 @@ document.getElementById('file').addEventListener('change', (e) => {
           if (n.collapsed === undefined) n.collapsed = false;
           if (n.locked === undefined) n.locked = false;
       });
-      state.nextId = obj.nextId || (Math.max(...state.nodes.map(n => typeof n.id === 'number' ? n.id : 0), 0) + 1);
+      state.nextId = inferNextId(state.nodes, obj.nextId);
       selectNode(null);
       save();
       render();
@@ -631,14 +677,26 @@ colorPaletteContainer.addEventListener('click', (e) => {
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase();
+    const term = e.target.value.trim().toLowerCase();
+    const matches = [];
     document.querySelectorAll('.node').forEach(el => {
         const node = byId(el.dataset.id);
         if (node) {
             const isMatch = term && node.title.toLowerCase().includes(term);
             el.classList.toggle('highlight', isMatch);
+            if (isMatch) matches.push(node);
         }
     });
+
+    if (!term) return;
+
+    const targetNode = matches.find(n => n.id === state.selectedId) || matches[0];
+    if (!targetNode) return;
+
+    focusOnNode(targetNode);
+    if (targetNode.id !== state.selectedId) {
+        selectNode(targetNode.id);
+    }
 });
 
 viewport.addEventListener('mouseover', (e) => {
@@ -657,6 +715,33 @@ viewport.addEventListener('mouseover', (e) => {
             outgoingWire.forEach(el => el.classList.add('active'));
         });
     }
+});
+
+viewport.addEventListener('dblclick', (e) => {
+    if (modal.style.display !== 'none') return;
+    const nodeElement = e.target.closest('.node');
+    if (!nodeElement) return;
+
+    const node = byId(nodeElement.dataset.id);
+    if (!node || !node.url) return;
+
+    const rawUrl = String(node.url).trim();
+    if (!rawUrl) return;
+
+    let href = rawUrl;
+    try {
+        href = new URL(rawUrl).href;
+    } catch (err) {
+        try {
+            href = new URL(`https://${rawUrl}`).href;
+        } catch (secondaryErr) {
+            console.warn('Unable to open node URL', rawUrl, secondaryErr);
+            return;
+        }
+    }
+
+    const win = window.open(href, '_blank', 'noopener,noreferrer');
+    if (win) win.opener = null;
 });
 
 viewport.addEventListener('mouseout', (e) => {

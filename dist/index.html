@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brainwave - Visual Mind Mapper</title>
+
+  <meta name="description" content="Organize your ideas with a powerful and intuitive mind mapping tool. Create, link, and customize nodes with titles, descriptions, and colors." />
+  <meta property="og:title" content="Brainwave - Visual Mind Mapper" />
+  <meta property="og:description" content="Organize your ideas with a powerful and intuitive mind mapping tool. Create, link, and customize nodes with titles, descriptions, and colors." />
+  <meta property="og:image:alt" content="A preview of the Brainwave mind mapping application interface." />
+  <meta name="twitter:title" content="Brainwave - Visual Mind Mapper" />
+  <meta name="twitter:description" content="Organize your ideas with a powerful and intuitive mind mapping tool. Create, link, and customize nodes with titles, descriptions, and colors." />
+
+  <script type="module" crossorigin src="/assets/index-CrNb7zOR.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BdAvzZbF.css">
+</head>
+<body>
+  <!-- ===== Toolbar ===== -->
+  <div class="toolbar">
+    <div class="group">
+      <button id="addChild" class="btn-accent" title="Add a child to the selected node (A)">+ Child</button>
+      <button id="editNode" title="Edit the selected node's properties (E)">Edit</button>
+      <button id="lockNodeBtn" title="Lock/Unlock selected node (L)">
+        <svg class="icon-unlocked" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+        <svg class="icon-locked" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </button>
+      <button id="deleteNode" class="btn-danger" title="Delete selected node (Delete)">Delete</button>
+      <span class="badge" id="selTxt">No node selected</span>
+    </div>
+
+    <div class="group">
+      <input type="search" id="search" placeholder="Search by name..." />
+    </div>
+
+    <div class="group">
+      <button id="layoutBtn" title="Auto arrange nodes in a tree layout">Tree Layout</button>
+      <button id="centerBtn" title="Center the canvas">Center View</button>
+      <button id="resetBtn" title="Reset zoom & pan to default">Reset Zoom</button>
+    </div>
+
+    <div class="group">
+      <button id="exportBtn" title="Download your mind map as JSON">Export</button>
+      <label class="btn" title="Import a previously exported JSON">
+        Import <input id="file" type="file" accept="application/json" />
+      </label>
+    </div>
+
+    <div class="group">
+        <button id="themeToggleBtn" class="btn-icon" title="Toggle Light/Dark Theme">
+            <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+    </div>
+  </div>
+
+  <!-- ===== Stage ===== -->
+  <div id="stage">
+    <div class="grid"></div>
+    <div id="viewport">
+      <svg id="wires">
+        <defs>
+          <linearGradient id="wireGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="var(--accent)"/>
+            <stop offset="100%" stop-color="var(--accent-2)"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ===== Help Widget ===== -->
+  <div id="helpWidget" class="help-widget collapsed">
+    <div class="help-content">
+      <strong>Quick Guide</strong><br>
+      - Scroll to Zoom, Drag background to Pan.<br>
+      - Double‑click a node to open its URL.<br>
+      - Use <kbd>Export</kbd> to save, <kbd>Import</kbd> to load.
+    </div>
+    <button id="helpToggleBtn" class="help-toggle" title="Toggle Quick Guide">
+      <svg class="icon-question" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <svg class="icon-close" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+
+  <!-- ===== Edit/Add Modal ===== -->
+  <div id="modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <form id="modalForm">
+        <h3 id="modalTitle">Edit Node</h3>
+        <input type="hidden" id="nodeIdInput">
+        <div class="form-group">
+          <label for="nodeTitleInput">Title</label>
+          <input type="text" id="nodeTitleInput" required>
+        </div>
+        <div class="form-group">
+          <label for="nodeUrlInput">URL (optional)</label>
+          <input type="url" id="nodeUrlInput" placeholder="https://example.com">
+        </div>
+        <div class="form-group">
+          <label for="nodeDescTextarea">Short Description (optional)</label>
+          <textarea id="nodeDescTextarea" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <div id="colorPalette" class="color-palette">
+            <!-- Color swatches will be injected here -->
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelBtn" class="btn">Cancel</button>
+          <button type="submit" class="btn btn-accent">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
