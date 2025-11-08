@@ -50,6 +50,21 @@ const authErrorMsg = document.getElementById('authErrorMsg');
 const authCloseBtn = document.getElementById('authCloseBtn');
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
 const toolbar = document.getElementById('toolbar');
+const historyBtn = document.getElementById('historyBtn');
+const historyModal = document.getElementById('historyModal');
+const historyCloseBtn = document.getElementById('historyCloseBtn');
+const historyContent = document.getElementById('historyContent');
+const linkModal = document.getElementById('linkModal');
+const linkModalTitle = document.getElementById('linkModalTitle');
+const linkCloseBtn = document.getElementById('linkCloseBtn');
+const linkForm = document.getElementById('linkForm');
+const linkModeSwitch = document.getElementById('linkModeSwitch');
+const linkParentIdInput = document.getElementById('linkParentId');
+const linkChildIdInput = document.getElementById('linkChildId');
+const linkLabelGroup = document.getElementById('linkLabelGroup');
+const linkLabelInput = document.getElementById('linkLabel');
+const linkError = document.getElementById('linkError');
+const linkCancelBtn = document.getElementById('linkCancelBtn');
 
 // ----- Constants -----
 const SAVE_KEY = 'brainwave-mindmap-v2'; // Incremented version for new features
@@ -87,7 +102,8 @@ const state = {
     nodeStartPos: { x: 0, y: 0 },
   }
   ,
-  links: []
+  links: [],
+  history: []
 };
 
 // ----- State Management & Utils -----
@@ -99,6 +115,7 @@ function serializeState() {
     scale: state.scale,
     selectedId: state.selectedId,
     links: state.links || [],
+    history: state.history || [],
   };
 }
 
@@ -113,6 +130,7 @@ function applyPersistedState(obj) {
   state.scale = obj.scale || 1;
   state.selectedId = obj.selectedId || null;
   state.links = Array.isArray(obj.links) ? obj.links : [];
+  state.history = Array.isArray(obj.history) ? obj.history : [];
 }
 
 function getLocalSaveKey(userId = state.currentUserId) {
@@ -235,6 +253,13 @@ async function handleSessionChange(session) {
       // Clear guest data when signing in
       localStorage.removeItem(getLocalSaveKey(null));
     }
+    state.nodes = [];
+    state.links = [];
+    state.history = [];
+    state.nextId = 1;
+    state.selectedId = null;
+    state.pan = { x: 0, y: 0 };
+    state.scale = 1;
   }
 
   updateAuthUI();
@@ -306,6 +331,8 @@ function updateAuthUI() {
   if (importLabel) importLabel.style.display = isSignedIn ? 'inline-flex' : 'none';
   const linkNodesBtnEl = document.getElementById('linkNodesBtn');
   if (linkNodesBtnEl) linkNodesBtnEl.style.display = isSignedIn ? 'inline-flex' : 'none';
+  const historyBtnEl = document.getElementById('historyBtn');
+  if (historyBtnEl) historyBtnEl.style.display = isSignedIn ? 'inline-flex' : 'none';
   
   // Search and theme toggle (always visible)
   // These are already visible by default, no change needed
@@ -847,6 +874,88 @@ function closeModal() {
   state.editingNodeId = null;
 }
 
+function openHistoryModal() {
+    if (!state.currentUserId || !historyModal || !historyContent) return;
+    const historyDateFilter = document.getElementById('historyDateFilter');
+
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function localISO(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+    const groups = {};
+    for (const h of state.history || []) {
+      const d = new Date(h.created_at);
+      if (isNaN(d.getTime())) continue;
+      const iso = localISO(d);
+      const displayDate = d.toLocaleDateString();
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (!groups[iso]) groups[iso] = { displayDate, items: [] };
+      groups[iso].items.push({ time: timeStr, t: d.getTime(), nodeId: h.nodeId });
+    }
+
+    function renderCards(filterISO = ''){
+      const entries = Object.entries(groups);
+      let days = entries.map(([iso, obj]) => ({ iso, displayDate: obj.displayDate, items: obj.items, maxT: Math.max(...obj.items.map(x=>x.t)) }));
+      if (filterISO) days = days.filter(d => d.iso === filterISO);
+      days.sort((a, b) => b.maxT - a.maxT);
+      let html = '';
+      for (const d of days) {
+        const items = [...d.items].sort((a, b) => a.t - b.t);
+        const count = items.length;
+        html += `
+        <div class="history-card" data-date="${d.iso}">
+          <button class="history-card-header" type="button" aria-expanded="false">
+            <div class="history-card-title">${d.displayDate}</div>
+            <div class="history-card-meta">
+              <span class="history-card-count">${count} boxes</span>
+              <span class="history-card-caret" aria-hidden="true">▸</span>
+            </div>
+          </button>
+          <div class="history-entries" hidden>
+            <ul class="history-list">
+              ${items.map(it => {
+                const n = byId(it.nodeId);
+                const title = n?.title ? ` — ${escapeHtml(n.title)}` : '';
+                return `<li><span class="history-time">${it.time}</span><span class="history-id">ID: ${it.nodeId}</span><span class="history-title">${title}</span></li>`;
+              }).join('')}
+            </ul>
+          </div>
+        </div>`;
+      }
+      if (!html) html = '<div class="history-empty">No history yet.</div>';
+      historyContent.innerHTML = html;
+    }
+
+    renderCards(historyDateFilter?.value || '');
+
+    historyContent.onclick = (e) => {
+      const header = e.target.closest('.history-card-header');
+      if (!header) return;
+      const card = header.closest('.history-card');
+      const entries = card.querySelector('.history-entries');
+      const expanded = header.getAttribute('aria-expanded') === 'true';
+      header.setAttribute('aria-expanded', String(!expanded));
+      if (entries) entries.hidden = expanded;
+      card.classList.toggle('open', !expanded);
+    };
+
+    historyDateFilter?.addEventListener('input', () => {
+      renderCards(historyDateFilter.value || '');
+    });
+
+    try {
+      const tb = toolbar?.getBoundingClientRect?.();
+      const topPx = tb ? (tb.bottom + 12) : 92;
+      historyModal.style.setProperty('--history-top', `${Math.max(0, Math.floor(topPx))}px`);
+    } catch {}
+
+    historyModal.style.display = 'flex';
+}
+
+function closeHistoryModal() {
+    if (!historyModal) return;
+    historyModal.style.display = 'none';
+}
+
 modalForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const title = nodeTitleInput.value.trim();
@@ -893,12 +1002,77 @@ modalForm.addEventListener('submit', (e) => {
     }
 
     state.nodes.push({ id, title, url, description, color, edgeLabel, shape, x: (p.x || 0) + 350, y: targetY, parentId: p.id, collapsed: false, locked: false });
+    state.history.push({ nodeId: id, created_at: new Date().toISOString() });
     selectNode(id);
   }
 
   closeModal();
   save();
   render();
+});
+
+// Link/Unlink modal logic
+function openLinkModal({ mode = 'link', fromId = null, toId = null } = {}) {
+  if (!state.currentUserId) return;
+  if (window.innerWidth <= 767) {
+    closeMobileMenu();
+  }
+  linkError.textContent = '';
+  const isLink = mode === 'link';
+  if (linkModalTitle) linkModalTitle.textContent = isLink ? 'Link Nodes' : 'Unlink Nodes';
+  const segItems = linkModeSwitch?.querySelectorAll?.('.seg-item');
+  segItems?.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+  if (linkLabelGroup) linkLabelGroup.style.display = isLink ? 'block' : 'none';
+  if (linkParentIdInput) linkParentIdInput.value = fromId || '';
+  if (linkChildIdInput) linkChildIdInput.value = toId || '';
+  if (linkLabelInput) linkLabelInput.value = '';
+  linkModal.style.display = 'flex';
+  linkParentIdInput?.focus();
+}
+
+function closeLinkModal() {
+  linkModal.style.display = 'none';
+  state.editingLinkId = null;
+}
+
+linkForm?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  linkError.textContent = '';
+  const fromId = linkParentIdInput.value.trim();
+  const toId = linkChildIdInput.value.trim();
+  if (!fromId || !toId) { linkError.textContent = 'Both IDs are required.'; return; }
+  const from = byId(fromId);
+  const to = byId(toId);
+  if (!from || !to) { linkError.textContent = 'Invalid node IDs.'; return; }
+  const activeMode = linkModeSwitch.querySelector('.seg-item.active')?.dataset.mode || 'link';
+  if (activeMode === 'link') {
+    if (!Array.isArray(state.links)) state.links = [];
+    const existing = state.links.find(l => l.fromId === fromId && l.toId === toId);
+    if (existing) { linkError.textContent = 'Link already exists.'; return; }
+    const label = linkLabelInput.value.trim();
+    state.links.push({ fromId, toId, label });
+  } else {
+    if (!Array.isArray(state.links)) state.links = [];
+    const before = state.links.length;
+    state.links = state.links.filter(l => !((l.fromId === fromId && l.toId === toId) || (l.fromId === toId && l.toId === fromId)));
+    if (state.links.length === before) { linkError.textContent = 'Link not found.'; return; }
+  }
+  closeLinkModal();
+  save();
+  render();
+});
+
+linkCancelBtn?.addEventListener('click', closeLinkModal);
+linkCloseBtn?.addEventListener('click', closeLinkModal);
+linkModal?.addEventListener('click', (e) => { if (e.target === linkModal) closeLinkModal(); });
+linkModeSwitch?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.seg-item');
+  if (!btn) return;
+  const mode = btn.dataset.mode;
+  linkModeSwitch.querySelectorAll('.seg-item').forEach(b => b.classList.toggle('active', b === btn));
+  if (linkModalTitle) linkModalTitle.textContent = mode === 'link' ? 'Link Nodes' : 'Unlink Nodes';
+  if (linkLabelGroup) linkLabelGroup.style.display = mode === 'link' ? 'block' : 'none';
+  if (linkError) linkError.textContent = '';
 });
 
 // ----- Commands & Layout -----
@@ -1192,7 +1366,7 @@ document.getElementById('centerBtn').onclick = centerView;
 document.getElementById('resetBtn').onclick = resetZoom;
 document.getElementById('exportBtn').onclick = exportJSON;
 const linkNodesBtn = document.getElementById('linkNodesBtn');
-if (linkNodesBtn) linkNodesBtn.onclick = linkNodesById;
+if (linkNodesBtn) linkNodesBtn.onclick = () => openLinkModal({ mode: 'link' });
 document.getElementById('file').addEventListener('change', (e) => {
   if (!state.currentUserId) {
     e.target.value = '';
@@ -1252,6 +1426,9 @@ authCloseBtn?.addEventListener('click', closeAuthModal);
 authModal?.addEventListener('click', (e) => {
   if (e.target === authModal) closeAuthModal();
 });
+historyBtn?.addEventListener('click', openHistoryModal);
+historyCloseBtn?.addEventListener('click', closeHistoryModal);
+historyModal?.addEventListener('click', (e) => { if (e.target === historyModal) closeHistoryModal(); });
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
