@@ -555,12 +555,14 @@ function render() {
     state.nodes.forEach(n => {
         const el = nodeElements.get(n.id);
         if (el) {
-            n.width = el.offsetWidth;
-            n.height = el.offsetHeight;
+            const inner = el.querySelector('.node-inner');
+            n.width = inner ? inner.offsetWidth : el.offsetWidth;
+            n.height = inner ? inner.offsetHeight : el.offsetHeight;
         }
     });
 
     renderWires(visibleNodes);
+    updateActiveWires();
     updateSelText();
     updateButtonStates();
     highlightSearchResults(state.searchTerm || '', { focusOnFirst: false });
@@ -596,21 +598,24 @@ function renderWires(visibleNodes) {
             if (!p) return;
 
             const pHalfW = (p.width || 240) / 2;
+            const pHalfH = (p.height || 80) / 2;
             const nHalfW = (n.width || 240) / 2;
+            const nHalfH = (n.height || 80) / 2;
 
-            let startX, startY, endX, endY;
-            startY = p.y;
-            endY = n.y;
-
+            const inset = 2;
+            // Choose which sides to connect:
+            // - Root ("Master The Brain"): allow 4-direction anchor
+            // - Others: horizontal-only anchors (left/right)
+            let a1, a2;
             if (p.id === 'root') {
-                const childOnLeft = n.x < p.x;
-                startX = p.x + (childOnLeft ? -pHalfW : pHalfW);
-                endX = n.x + (childOnLeft ? nHalfW : -nHalfW);
+                a1 = anchorFor(p, n, pHalfW, pHalfH, inset);      // root side: free (up/right/down/left)
+                a2 = anchorForHorizontal(n, p, nHalfW, inset);     // child side: horizontal only
             } else {
-                const childOnLeft = n.x < p.x;
-                startX = p.x + (childOnLeft ? -pHalfW : pHalfW);
-                endX = n.x + (childOnLeft ? nHalfW : -nHalfW);
+                a1 = anchorForHorizontal(p, n, pHalfW, inset);     // parent side: horizontal only
+                a2 = anchorForHorizontal(n, p, nHalfW, inset);     // child side: horizontal only
             }
+            const startX = a1.x, startY = a1.y;
+            const endX = a2.x, endY = a2.y;
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -618,7 +623,7 @@ function renderWires(visibleNodes) {
             path.dataset.childId = n.id;
             shadow.dataset.childId = n.id;
             
-            const c = orthogonalConnector(startX - minX, startY - minY, endX - minX, endY - minY);
+            const c = directionalConnector(startX - minX, startY - minY, endX - minX, endY - minY, a1.dir, a2.dir);
             
             shadow.setAttribute('d', c); shadow.setAttribute('class', 'wire shadow');
             path.setAttribute('d', c); path.setAttribute('class', 'wire');
@@ -645,15 +650,27 @@ function renderWires(visibleNodes) {
         if (!visibleNodeIds.has(from.id) || !visibleNodeIds.has(to.id)) return;
 
         const pHalfW = (from.width || 240) / 2;
+        const pHalfH = (from.height || 80) / 2;
         const nHalfW = (to.width || 240) / 2;
+        const nHalfH = (to.height || 80) / 2;
 
-        let startX, startY, endX, endY;
-        startY = from.y;
-        endY = to.y;
-
-        const childOnLeft = to.x < from.x;
-        startX = from.x + (childOnLeft ? -pHalfW : pHalfW);
-        endX = to.x + (childOnLeft ? nHalfW : -nHalfW);
+        const inset = 2;
+        // Custom links follow the same rule:
+        // - Root endpoint (if present) can use 4-direction anchor
+        // - Non-root endpoints use horizontal-only anchors
+        let a1, a2;
+        if (from.id === 'root') {
+            a1 = anchorFor(from, to, pHalfW, pHalfH, inset);
+            a2 = anchorForHorizontal(to, from, nHalfW, inset);
+        } else if (to.id === 'root') {
+            a1 = anchorForHorizontal(from, to, pHalfW, inset);
+            a2 = anchorFor(to, from, nHalfW, nHalfH, inset);
+        } else {
+            a1 = anchorForHorizontal(from, to, pHalfW, inset);
+            a2 = anchorForHorizontal(to, from, nHalfW, inset);
+        }
+        const startX = a1.x, startY = a1.y;
+        const endX = a2.x, endY = a2.y;
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -662,7 +679,7 @@ function renderWires(visibleNodes) {
         shadow.dataset.linkFrom = from.id;
         shadow.dataset.linkTo = to.id;
 
-        const d = orthogonalConnector(startX - minX, startY - minY, endX - minX, endY - minY);
+        const d = directionalConnector(startX - minX, startY - minY, endX - minX, endY - minY, a1.dir, a2.dir);
         shadow.setAttribute('d', d); shadow.setAttribute('class', 'wire shadow');
         path.setAttribute('d', d); path.setAttribute('class', 'wire');
         wiresSVG.appendChild(shadow);
@@ -685,6 +702,48 @@ function orthogonalConnector(x1, y1, x2, y2) {
     const midX = x1 + (x2 - x1) / 2;
     return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
 }
+ 
+function directionalConnector(x1, y1, x2, y2, dir1, dir2) {
+    const offset = 60;
+    let c1x = x1, c1y = y1, c2x = x2, c2y = y2;
+    if (dir1 === 'right') c1x = x1 + offset; else if (dir1 === 'left') c1x = x1 - offset; else if (dir1 === 'down') c1y = y1 + offset; else if (dir1 === 'up') c1y = y1 - offset;
+    if (dir2 === 'right') c2x = x2 + offset; else if (dir2 === 'left') c2x = x2 - offset; else if (dir2 === 'down') c2y = y2 + offset; else if (dir2 === 'up') c2y = y2 - offset;
+    return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
+}
+
+function anchorFor(node, target, halfW, halfH, inset) {
+    const dx = (target.x - node.x);
+    const dy = (target.y - node.y);
+    if (Math.abs(dx) >= Math.abs(dy)) {
+        const dir = dx < 0 ? 'left' : 'right';
+        const x = node.x + (dir === 'left' ? -halfW + inset : halfW - inset);
+        return { x, y: node.y, dir: dir === 'left' ? 'left' : 'right' };
+    } else {
+        const dir = dy < 0 ? 'up' : 'down';
+        const y = node.y + (dir === 'up' ? -halfH + inset : halfH - inset);
+        return { x: node.x, y, dir };
+    }
+}
+
+// anchorForHorizontal: returns an anchor constrained to left/right sides only.
+// This is used for all non-root nodes so their connections stay lateral (classic mind map style).
+function anchorForHorizontal(node, target, halfW, inset) {
+    const dx = target.x - node.x;
+    const dir = dx < 0 ? 'left' : 'right';
+    const x = node.x + (dir === 'left' ? -halfW + inset : halfW - inset);
+    return { x, y: node.y, dir };
+}
+
+function updateActiveWires() {
+    const id = state.selectedId;
+    wiresSVG.querySelectorAll('.wire').forEach(el => el.classList.remove('active'));
+    if (!id) return;
+    wiresSVG.querySelectorAll(`[data-child-id="${id}"]`).forEach(el => el.classList.add('active'));
+    childrenOf(id).forEach(child => {
+        wiresSVG.querySelectorAll(`[data-child-id="${child.id}"]`).forEach(el => el.classList.add('active'));
+    });
+    wiresSVG.querySelectorAll(`[data-link-from="${id}"], [data-link-to="${id}"]`).forEach(el => el.classList.add('active'));
+}
 
 // ----- UI & Interaction -----
 function selectNode(id) {
@@ -700,6 +759,7 @@ function selectNode(id) {
   }
   updateSelText();
   updateButtonStates();
+  updateActiveWires();
   save();
 }
 
@@ -1049,6 +1109,7 @@ function handlePointerMove(e) {
             nodeEl.style.left = `${node.x}px`;
             nodeEl.style.top = `${node.y}px`;
             renderWires(getVisibleNodes());
+            updateActiveWires();
         });
     }
   }
@@ -1298,6 +1359,7 @@ viewport.addEventListener('mouseout', (e) => {
             const outgoingWire = wiresSVG.querySelectorAll(`[data-child-id="${child.id}"]`);
             outgoingWire.forEach(el => el.classList.remove('active'));
         });
+        updateActiveWires();
     }
 });
 

@@ -6,6 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="icon" href="image/favicon.ico">
   <title>Brainwave - Visual Mind Mapper</title>
 
@@ -41,13 +42,22 @@
   <!-- ===== Toolbar ===== -->
   <div class="toolbar" id="toolbar">
     <div class="group">
-      <button id="addChild" class="btn-accent" title="Add a child to the selected node (A)">+ Child</button>
-      <button id="editNode" title="Edit the selected node's properties (E)">Edit</button>
-      <button id="lockNodeBtn" title="Lock/Unlock selected node (L)">
-        <svg class="icon-unlocked" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-        <svg class="icon-locked" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <button id="addChild" class="btn-accent tooltip" title="Add a child to the selected node (A)">
+        <i class="fa-solid fa-plus" style="font-size:16px;"></i>
+        <span class="tooltiptext">Add&nbsp;Child</span></button>
+      <button id="editNode" class="tooltip" title="Edit the selected node's properties (E)">
+        <i class="fa-solid fa-pen-to-square" style="font-size: 16px;"></i>
+        <span class="tooltiptext">&nbsp;Edit&nbsp;</span>
       </button>
-      <button id="deleteNode" class="btn-danger" title="Delete selected node (Delete)">Delete</button>
+      <button id="lockNodeBtn" class="tooltip" title="Lock/Unlock selected node (L)">
+        <svg class="icon-unlocked" xmlns="http://www.w3.org/2000/svg" width="20" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+        <svg class="icon-locked" xmlns="http://www.w3.org/2000/svg" width="20" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span class="tooltiptext">Locker</span>
+      </button>
+      <button id="deleteNode" class="btn-danger tooltip" title="Delete selected node (Delete)">
+        <i class="fa-solid fa-trash"></i>
+        <span class="tooltiptext">Delete</span>
+      </button>
       <span class="badge" id="selTxt">No node selected</span>
     </div>
 
@@ -56,25 +66,48 @@
     </div>
 
     <div class="group">
-      <button id="layoutBtn" title="Auto arrange nodes in a tree layout">Tree Layout</button>
-      <button id="centerBtn" title="Center the canvas">Center View</button>
-      <button id="resetBtn" title="Reset zoom & pan to default">Reset Zoom</button>
+      <button id="layoutBtn" class="tooltip" title="Auto arrange nodes in a tree layout">
+        <i class="fa-solid fa-folder-tree" style="font-size:16px;"></i>
+        <span class="tooltiptext">Tree&nbsp;Layout</span>
+      </button>
+      <button id="centerBtn" class="tooltip" title="Center the canvas">
+        <i class="fa-solid fa-arrows-to-eye"></i>
+        <span class="tooltiptext">Center&nbsp;View</span>
+      </button>
+      <button id="resetBtn" class="tooltip" title="Reset zoom & pan to default">
+        <i class="fa-solid fa-magnifying-glass-plus"></i>
+        <span class="tooltiptext">Reset&nbsp;Zoom</span>
+      </button>
     </div>
 
     <div class="group">
-      <button id="linkNodesBtn" title="Link Parent and Child by IDs">Link IDs</button>
+      <button id="linkNodesBtn" class="tooltip" title="Link Parent and Child by IDs">
+        <i class="fa fa-link" aria-hidden="true"></i>
+        <span class="tooltiptext">&nbsp;Link&nbsp;Child&nbsp;</span>
+      </button>
     </div>
 
     <div class="group auth-group">
       <span id="authStatus" class="badge">Guest mode</span>
-      <button id="loginBtn" title="Sign in to sync with Supabase">Sign In</button>
-      <button id="logoutBtn" title="Sign out" style="display:none;">Sign Out</button>
+      <button id="loginBtn" class="tooltip btn-icon" title="Sign in to sync with Supabase">
+        <i class="fa-solid fa-key"></i>
+        <span class="tooltiptext">Sign&nbsp;In</span>
+      </button>
+      <button id="logoutBtn" class="tooltip btn-icon" title="Sign out" style="display:none;">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span class="tooltiptext">Sign&nbsp;Out</span>
+      </button>
     </div>
 
     <div class="group">
-      <button id="exportBtn" title="Download your mind map as JSON">Export</button>
-      <label class="btn" title="Import a previously exported JSON">
-        Import <input id="file" type="file" accept="application/json" />
+      <button id="exportBtn" class="tooltip" title="Download your mind map as JSON">
+        <i class="fa-solid fa-download"></i>
+        <span class="tooltiptext">&nbsp;Download&nbsp;Json&nbsp;</span>
+      </button>
+      <label class="btn tooltip" title="Import a previously exported JSON">
+        <i class="fa-solid fa-upload"></i>
+        <span class="tooltiptext">&nbsp;Import&nbsp;Json&nbsp;file&nbsp;</span>
+        <input id="file" type="file" accept="application/json" />
       </label>
     </div>
 

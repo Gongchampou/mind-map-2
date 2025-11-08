@@ -115,7 +115,24 @@ button:disabled{ opacity: .4; cursor: not-allowed; background: transparent !impo
   min-width: 78px;
 }
 
+/* Compact icon-only auth buttons */
+.auth-group .btn-icon {
+  min-width: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-icon, #lockNodeBtn { padding: 8px; }
+#toolbar .btn-icon, .toolbar .btn-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 #themeToggleBtn .icon-sun { display: none; }
 #themeToggleBtn .icon-moon { display: block; }
 html[data-theme="light"] #themeToggleBtn .icon-sun { display: block; }
@@ -145,7 +162,7 @@ html[data-theme="light"] #themeToggleBtn .icon-moon { display: none; }
 svg#wires{
   position: absolute;
   pointer-events: none;
-  z-index: 10;
+  z-index: 30;
   overflow: visible;
 }
 
@@ -214,7 +231,7 @@ svg#wires{
 
 .node-collapse-toggle {
     position: absolute;
-    top: 50%;
+    top: 40%;
     right: -11px;
     transform: translateY(-50%);
     width: 22px;
@@ -248,7 +265,7 @@ svg#wires{
 
 
 /* Connection lines */
-.wire{ stroke:url(#wireGrad); stroke-width:2.5; fill:none; opacity:.9; transition: all .2s ease; }
+.wire{ stroke:url(#wireGrad); stroke-width:2.5; fill:none; opacity:.9; transition: all .2s ease; stroke-linecap: round; }
 .wire.shadow{ stroke:rgba(0,0,0,.6); stroke-width:6; filter: blur(6px); opacity:.7; transition: all .2s ease; }
 
 .wire-label{
@@ -260,13 +277,13 @@ svg#wires{
   pointer-events: none;
 }
 
+/*active wire edit*/
 .wire.active {
-    stroke: var(--accent);
+    stroke: var(--danger);
     stroke-width: 4px;
 }
 .wire.shadow.active {
-    stroke-width: 8px;
-    opacity: 0.5;
+    display: none;
 }
 
 /* Grid background */
@@ -469,3 +486,31 @@ svg#wires{
   .toolbar{ inset:10px; }
   .toolbar .group { padding-right: 8px; }
 } */
+ /*tooltip fo the header button*/
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: auto;
+  background-color:var(--muted);
+  color: var(--ink);
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position above the icon */
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}

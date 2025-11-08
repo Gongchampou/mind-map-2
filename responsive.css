@@ -179,11 +179,21 @@
     padding-bottom: 0;
   }
   
-  /* Full width buttons in mobile menu for easier tapping */
-  .toolbar.mobile-menu-open .group button,
-  .toolbar.mobile-menu-open .group .btn {
-    width: 100%;
+  /* Compact buttons on mobile (always) */
+  .toolbar .group button,
+  .toolbar .group .btn,
+  .toolbar .group label.btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px;
     justify-content: center;
+    flex: 0 0 auto;
+  }
+  .toolbar .group button i,
+  .toolbar .group .btn i {
+    font-size: 14px;
   }
   
   /* Search input full width in mobile menu */
@@ -208,9 +218,9 @@
   
   /* Icon buttons on mobile */
   .btn-icon, #lockNodeBtn {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 10px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px;
   }
   
   /* --- Search Input Mobile --- */
@@ -231,15 +241,27 @@
     max-width: 100%;
   }
   
-  /* --- Auth Group Mobile --- */
+  /* --- Auth Group Mobile (compact inline) --- */
   .auth-group {
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
   }
-  
+  /* Hide auth status text on mobile to save space */
+  .auth-group #authStatus { display: none; }
   .auth-group button {
-    width: 100%;
-    min-width: auto;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+  }
+
+  /* Prevent file input from stretching the import label */
+  .toolbar .group label.btn input[type="file"] {
+    width: 0;
+    height: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
   }
   
   /* --- Nodes Mobile --- */
@@ -397,19 +419,21 @@
   /* --- Toolbar Tablet Layout --- */
   .toolbar {
     inset: 12px 12px auto 12px;
-    padding: 10px;
+    padding: 8px 10px;
     border-radius: 14px;
     /* Allow wrapping but keep horizontal layout */
     flex-wrap: wrap;
     align-items: center;
+    gap: 6px;
   }
   
   /* --- Toolbar Groups Tablet --- */
   .toolbar .group {
-    padding-right: 10px;
-    margin-right: 8px;
+    padding-right: 8px;
+    margin-right: 6px;
     /* Allow groups to wrap if needed */
     flex-wrap: wrap;
+    gap: 6px;
   }
   
   /* --- Buttons Tablet --- */
@@ -420,14 +444,15 @@
   }
   
   .btn-icon, #lockNodeBtn {
-    min-width: 40px;
-    min-height: 40px;
-    padding: 9px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 8px;
   }
   
   /* --- Search Input Tablet --- */
   #search {
-    min-width: 200px;
+    min-width: 0;
+    width: clamp(160px, 24vw, 260px);
     padding: 9px 13px;
   }
   
@@ -515,11 +540,10 @@
   
   /* --- Toolbar Desktop --- */
   .toolbar {
-    /* Original desktop styles - already defined in main CSS */
-    /* These styles apply by default, so no changes needed */
-    /* Adjust if you want different desktop spacing */
+    /* Adjust desktop spacing to avoid wasted space */
     inset: 16px 16px auto 16px;
-    padding: 10px;
+    padding: 8px 10px;
+    gap: 8px;
   }
   
   /* --- Nodes Desktop --- */
