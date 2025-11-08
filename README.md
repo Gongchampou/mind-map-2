@@ -8,10 +8,13 @@ A fast, minimal, keyboard‑friendly mind‑mapping app built with Vite and vani
 - **Search** with inline highlighting
 - **Lock** nodes to prevent moving
 - **Link IDs**: Link any two nodes by their IDs without changing hierarchy; optionally name the line
+- **Unlink by IDs**: Remove a custom link between two nodes or detach a descendant branch (ancestor→descendant) from its parent
+- **Collapse/Expand branches** to temporarily hide/show children
 - **Side-anchored connectors**: All parent→child wires anchor from the appropriate side (including the master/root)
 - **20 Node Shapes**: Choose from 20 shapes (including a brain style) in the Add/Edit modal
 - **Import/Export** JSON
 - **Light/Dark theme** toggle and **mobile menu**
+- **Creation History** viewer (grouped by day)
 - Optional **Supabase sync** per user
 
 ## Requirements
@@ -21,7 +24,8 @@ A fast, minimal, keyboard‑friendly mind‑mapping app built with Vite and vani
 ## Quick Start
 - Run in your local machine by opening the terminal and running the following commands:
 ```bash
-git clone https://github.com
+git clone https://github.com/Gongchampou/mindmap.git
+cd mindmap
 npm install
 npm run dev
 # Open http://localhost:5173
@@ -84,6 +88,7 @@ Restart the dev server after adding env vars.
 - **Center View / Reset Zoom**: Navigation helpers. Always available.
 - **Zoom/Pan**: Mouse wheel to zoom; drag background to pan.
 - **Open URL**: Double‑click a node with a URL.
+- **Collapse/Expand**: Click the small +/- toggle on a node to collapse or expand its children (visible when signed in).
 - **Search**: Use the search field (desktop or mobile) to highlight matches.
 - **Import/Export JSON**: Export downloads a JSON; Import loads from a JSON file.
 - Export/Import preserves any extra links and their labels.
@@ -96,6 +101,17 @@ Restart the dev server after adding env vars.
   - Click the toolbar button “Link IDs” (available when signed in).
   - Enter the Parent ID and the Child ID (IDs are shown in each node’s card footer as `ID: <value>`).
   - Optionally enter a line name. This creates an additional labeled connector and does not change the existing parent→child relationship.
+
+- **Unlink by IDs (custom link or detach branch)**
+  - Click the toolbar button “Unlink” (available when signed in), or open the Link/Unlink dialog and switch to Unlink.
+  - Enter two node IDs.
+  - Behavior:
+    - If a custom link exists specifically between those two IDs (either direction), it is removed.
+    - If one node is an ancestor of the other, the descendant subtree is detached from its current parent (root cannot be detached). The parent→child edge label on that connection is cleared.
+  - Notes:
+    - Other custom links remain in place (only the explicit link between the two IDs is removed).
+    - Detaching a branch does not delete any nodes or auto‑assign a new parent; you can re‑link as needed.
+    - Lock prevents moving a node but does not currently block linking/unlinking.
 
 - **Parent→child line name on create/edit**
   - In the Add/Edit modal, use the field “Line Name (optional)” to label the connector from the parent to that child.
@@ -134,6 +150,15 @@ Tips for capturing:
 - **Access from phone/LAN**: `npm run dev -- --host`
 - **Reset local data**: Clear LocalStorage keys starting with `brainwave-mindmap-v2:` in your browser dev tools.
 - **Build errors**: Ensure Node 18+ and delete `node_modules` if needed, then `npm install`.
+
+## Missing / Roadmap
+- Click‑to‑link/unlink (select nodes or click the line) and a context menu on lines/nodes
+- Undo/Redo (current History is view‑only)
+- Option to also remove all cross‑subtree custom links when detaching a branch
+- Option to prevent linking/unlinking when a node is locked (currently allowed)
+- Unique IDs for custom links to support unlinking a specific line by its own ID
+- Replace placeholder screenshots under `docs/screenshots/`
+- Deployment guide (e.g., Netlify/Vercel) with environment configuration
 
 ## Tech Stack
 - Vite 5

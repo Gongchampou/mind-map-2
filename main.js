@@ -1457,6 +1457,7 @@ historyBtn?.addEventListener('click', openHistoryModal);
 historyCloseBtn?.addEventListener('click', closeHistoryModal);
 historyModal?.addEventListener('click', (e) => { if (e.target === historyModal) closeHistoryModal(); });
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('modalCloseBtn')?.addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
 function highlightSearchResults(term, { focusOnFirst = false } = {}) {
