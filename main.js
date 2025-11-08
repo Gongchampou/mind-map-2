@@ -331,6 +331,8 @@ function updateAuthUI() {
   if (importLabel) importLabel.style.display = isSignedIn ? 'inline-flex' : 'none';
   const linkNodesBtnEl = document.getElementById('linkNodesBtn');
   if (linkNodesBtnEl) linkNodesBtnEl.style.display = isSignedIn ? 'inline-flex' : 'none';
+  const unlinkNodesBtnEl = document.getElementById('unlinkNodesBtn');
+  if (unlinkNodesBtnEl) unlinkNodesBtnEl.style.display = isSignedIn ? 'inline-flex' : 'none';
   const historyBtnEl = document.getElementById('historyBtn');
   if (historyBtnEl) historyBtnEl.style.display = isSignedIn ? 'inline-flex' : 'none';
   
@@ -1055,7 +1057,19 @@ linkForm?.addEventListener('submit', (e) => {
     if (!Array.isArray(state.links)) state.links = [];
     const before = state.links.length;
     state.links = state.links.filter(l => !((l.fromId === fromId && l.toId === toId) || (l.fromId === toId && l.toId === fromId)));
-    if (state.links.length === before) { linkError.textContent = 'Link not found.'; return; }
+    const removedCustom = state.links.length !== before;
+    let detached = false;
+    let child = null;
+    if (to.parentId === from.id) child = to;
+    else if (from.parentId === to.id) child = from;
+    else if (isAncestor(from.id, to.id)) child = to;
+    else if (isAncestor(to.id, from.id)) child = from;
+    if (child && child.id !== 'root') {
+      child.parentId = null;
+      if (child.edgeLabel) child.edgeLabel = '';
+      detached = true;
+    }
+    if (!removedCustom && !detached) { linkError.textContent = 'Link not found.'; return; }
   }
   closeLinkModal();
   save();
@@ -1110,6 +1124,16 @@ function wouldCreateCycle(newParentId, childId) {
   let curr = newParentId;
   while (curr) {
     if (curr === childId) return true;
+    const n = byId(curr);
+    curr = n?.parentId || null;
+  }
+  return false;
+}
+
+function isAncestor(aId, bId) {
+  let curr = byId(bId)?.parentId || null;
+  while (curr) {
+    if (curr === aId) return true;
     const n = byId(curr);
     curr = n?.parentId || null;
   }
@@ -1368,6 +1392,8 @@ document.getElementById('resetBtn').onclick = resetZoom;
 document.getElementById('exportBtn').onclick = exportJSON;
 const linkNodesBtn = document.getElementById('linkNodesBtn');
 if (linkNodesBtn) linkNodesBtn.onclick = () => openLinkModal({ mode: 'link' });
+const unlinkNodesBtn = document.getElementById('unlinkNodesBtn');
+if (unlinkNodesBtn) unlinkNodesBtn.onclick = () => openLinkModal({ mode: 'unlink' });
 document.getElementById('file').addEventListener('change', (e) => {
   if (!state.currentUserId) {
     e.target.value = '';
