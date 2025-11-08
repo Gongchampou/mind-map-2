@@ -167,6 +167,40 @@ Tips for capturing:
 - Replace placeholder screenshots under `docs/screenshots/`
 - Deployment guide (e.g., Netlify/Vercel) with environment configuration
 
+## Project Structure
+```text
+.
+├─ index.html
+├─ main.js
+├─ style.css
+├─ responsive.css
+├─ supabaseClient.js
+├─ package.json
+├─ package-lock.json
+├─ yarn.lock
+├─ README.md
+├─ .env
+├─ .env.local
+├─ .gitignore
+├─ image/
+│  ├─ android-chrome-512x512.png
+│  ├─ favicon-32x32.png
+│  ├─ favicon.ico
+│  └─ README/
+│     ├─ home.png
+│     ├─ home-1.png
+│     ├─ tablet.png
+│     ├─ branch.png
+│     ├─ feature.png
+│     └─ add form.png
+├─ dist/                (build output)
+│  ├─ index.html
+│  └─ assets/
+│     ├─ index-BdAvzZbF.css
+│     └─ index-CrNb7zOR.js
+└─ node_modules/        (installed dependencies)
+```
+
 ## Tech Stack
 - Vite 5
 - Vanilla JS, HTML, CSS
