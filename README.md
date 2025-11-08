@@ -24,11 +24,11 @@ A fast, minimal, keyboard‑friendly mind‑mapping app built with Vite and vani
 ## Quick Start
 - Run in your local machine by opening the terminal and running the following commands:
 ```bash
-git clone https://github.com/Gongchampou/mindmap.git
-cd mindmap
+git clone https://github.com/Gongchampou/mind-map-2.git
+cd mind-map-2
 npm install
 npm run dev
-# Open http://localhost:5173
+# Open local host eg: http://localhost:5173
 ```
 
 ### Build & Preview
