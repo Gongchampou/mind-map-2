@@ -1,4 +1,8 @@
 # Brainwave – Visual Mind Mapper
+## photo
+![GitHub repo size](https://img.shields.io/github/repo-size/Gongchampou/mind-map)
+![GitHub stars](https://img.shields.io/github/stars/Gongchampou/mind-map?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Gongchampou/mind-map)
 
 A fast, minimal, keyboard‑friendly mind‑mapping app built with Vite and vanilla JavaScript. Supports cloud sync via Supabase.
 
