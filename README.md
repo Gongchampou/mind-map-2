@@ -125,13 +125,20 @@ Restart the dev server after adding env vars.
 ## Screenshots (placeholders)
 Add screenshots to `docs/screenshots/` and keep the filenames below for the README:
 
-![Overview](docs/screenshots/overview.png)
-![Toolbar](docs/screenshots/toolbar.png)
-![Add/Edit Modal](docs/screenshots/modal.png)
-![Mobile Menu](docs/screenshots/mobile-menu.png)
-![Search Highlight](docs/screenshots/search.png)
-![Theme Toggle](docs/screenshots/theme-toggle.png)
+<div style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
+  <img src="image/README/home.png" alt="Home" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+</div>
 
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
+  <img src="image/README/tablet.png" alt="Home" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+  <img src="image/README/branch.png" alt="Toolbar" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
+  <img src="image/README/feature.png" alt="Home" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+  <img src="image/README/add form.png" alt="Toolbar" style="width:100%; height:425px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+</div>
+ --- 
 Tips for capturing:
 - Use mock content with a few nodes and colors.
 - Show both light and dark themes.
