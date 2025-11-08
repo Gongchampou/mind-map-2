@@ -1235,7 +1235,7 @@ function handlePointerDown(e) {
     // In guest mode, only allow viewing (no selection or dragging)
     if (!state.currentUserId) return;
     selectNode(node.id); // Allow selection regardless of lock state
-    if (node.locked || e.button !== 0) return; // Prevent drag if locked
+    if (node.locked || (e.pointerType === 'mouse' && e.button !== 0)) return; // Prevent drag if locked
 
     nodeElement.style.cursor = 'grabbing';
     state.dragState = {
@@ -1248,7 +1248,7 @@ function handlePointerDown(e) {
     };
     nodeElement.setPointerCapture(e.pointerId);
   } else if (target.closest('#stage')) {
-    if (e.button !== 0) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     state.dragState = {
       isPanning: true,
       isDraggingNode: false,
@@ -1306,6 +1306,7 @@ function handlePointerUp(e) {
 window.addEventListener('pointerdown', handlePointerDown);
 window.addEventListener('pointermove', handlePointerMove);
 window.addEventListener('pointerup', handlePointerUp);
+window.addEventListener('pointercancel', handlePointerUp);
 
 window.addEventListener('wheel', (e) => {
   if (!e.target.closest('#stage') || modal.style.display !== 'none') return;

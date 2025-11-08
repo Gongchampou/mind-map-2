@@ -647,7 +647,7 @@
   }
   
   /* Prevent double-tap zoom on buttons */
-  button, .btn, .node {
+  button, .btn {
     touch-action: manipulation;
   }
 }
