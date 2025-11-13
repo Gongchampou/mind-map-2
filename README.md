@@ -1,7 +1,8 @@
 # Brainwave – Visual Mind Mapper
 ## photo
-![GitHub repo size](https://img.shields.io/github/repo-size/Gongchampou/mind-map)
-![GitHub stars](https://img.shields.io/github/stars/Gongchampou/mind-map?style=social)
+![GitHub repo size](https://img.shields.io/Gongchampou/mind-map-2?style=flat-square)
+https://github.com/Gongchampou/mind-map-2.git
+![GitHub stars](https://img.shields.io/Gongchampou/mind-map-2?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/Gongchampou/mind-map)
 
 A fast, minimal, keyboard‑friendly mind‑mapping app built with Vite and vanilla JavaScript. Supports cloud sync via Supabase.
@@ -129,18 +130,18 @@ Restart the dev server after adding env vars.
 ## Screenshots (placeholders)
 Add screenshots to `docs/screenshots/` and keep the filenames below for the README:
 
-<div style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
-  <img src="image/README/home.png" alt="Home" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+<div style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 6px; max-width: 1000px; margin: 12px 0;">
+  <img src="image/README/home.png" alt="Home" style="width:70%; height:70%; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
-  <img src="image/README/tablet.png" alt="Home" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
-  <img src="image/README/branch.png" alt="Toolbar" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
+  <img src="image/README/tablet.png" alt="Home" style="width:50%; height:100%; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+  <img src="image/README/branch.png" alt="Toolbar" style="width:50%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
-  <img src="image/README/feature.png" alt="Home" style="width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
-  <img src="image/README/add form.png" alt="Toolbar" style="width:100%; height:425px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 1000px; margin: 12px 0;">
+  <img src="image/README/feature.png" alt="Home" style="width:50%; height:100%; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+  <img src="image/README/add form.png" alt="Toolbar" style="width:50%; height:70%px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
 </div>
  --- 
 Tips for capturing:
