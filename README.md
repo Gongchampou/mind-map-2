@@ -210,3 +210,8 @@ Tips for capturing:
 - Vite 5
 - Vanilla JS, HTML, CSS
 - Supabase (optional)
+## Support This Project
+
+If you find this project helpful, you can support me through UPI.
+
+[![UPI](https://img.shields.io/badge/UPI-gongchampou9402@oksbi-blue?style=for-the-badge&logo=google-pay)](upi://pay?pa=gongchampou9402@oksbi)
