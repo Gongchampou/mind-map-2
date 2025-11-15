@@ -1,7 +1,6 @@
 # Brainwave – Visual Mind Mapper
 ## photo
 ![GitHub repo size](https://img.shields.io/Gongchampou/mind-map-2?style=flat-square)
-https://github.com/Gongchampou/mind-map-2.git
 ![GitHub stars](https://img.shields.io/Gongchampou/mind-map-2?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/Gongchampou/mind-map)
 
@@ -33,7 +32,7 @@ git clone https://github.com/Gongchampou/mind-map-2.git
 cd mind-map-2
 npm install
 npm run dev
-# Open local host eg: http://localhost:5173
+# Open local host eg: http://localhost:51xx
 ```
 
 ### Build & Preview
@@ -83,8 +82,9 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 Restart the dev server after adding env vars.
 
-## Usage
-- **Sign In/Out**: Top‑right. After signing in, your toolbar actions are enabled and your map is synced to Supabase.
+## Usage (instruction)
+- **Sign In(only)**: Top‑right. After signing in, your toolbar actions are enabled and your map is synced to Supabase.
+- **authentication**: Be sure to add you in the supabase authentication or invite your friend of uncomment the sign up in code line 180.
 - **Add Child**: Button “+ Child” or keys `A` / `+`.
 - **Edit**: Button “Edit” or `Ctrl+E`.
 - **Delete**: Button “Delete” or `Delete` / `Backspace`.
